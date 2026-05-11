@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGazer Test</title>
+
+    <!-- WebGazer library -->
+    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        button {
+            font-size: 20px;
+            padding: 12px 20px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>WebGazer Camera Test</h1>
+
+    <button id="startBtn">Start WebGazer</button>
+
+    <div id="status">Status: niet gestart</div>
+
+    <script>
+        const btn = document.getElementById("startBtn");
+        const status = document.getElementById("status");
+
+        btn.onclick = async () => {
+            status.innerText = "Status: starten...";
+
+            try {
+                await webgazer.setGazeListener(function(data, elapsedTime) {
+                    if (data == null) return;
+
+                    console.log("X:", data.x, "Y:", data.y);
+                }).begin();
+
+                webgazer.showVideoPreview(true)
+                         .showPredictionPoints(true);
+
+                status.innerText = "Status: WebGazer actief 👀";
+
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Fout: camera niet toegestaan";
+            }
+        };
+    </script>
+
+</body>
+</html>

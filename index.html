@@ -2,64 +2,122 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>WebGazer Test</title>
+    <title>WebGazer Complete Test</title>
 
-    <!-- WebGazer library -->
     <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
     <style>
         body {
-            font-family: Arial, sans-serif;
+            margin: 0;
+            font-family: Arial;
             text-align: center;
-            margin-top: 80px;
+            background: #f5f5f5;
         }
 
-        button {
-            font-size: 20px;
-            padding: 12px 20px;
+        h1 {
+            margin-top: 20px;
+        }
+
+        #startBtn {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin-top: 10px;
             cursor: pointer;
         }
 
-        #status {
-            margin-top: 20px;
-            font-size: 18px;
+        #info {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        /* calibratie punten */
+        .dot {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: red;
+            position: absolute;
+            cursor: pointer;
+        }
+
+        #tracker {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background: blue;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>WebGazer Camera Test</h1>
+<h1>WebGazer Complete Test</h1>
 
-    <button id="startBtn">Start WebGazer</button>
+<button id="startBtn">Start Camera & Tracking</button>
+<div id="info">Klik op de rode punten om te calibreren</div>
 
-    <div id="status">Status: niet gestart</div>
+<!-- live tracker punt -->
+<div id="tracker"></div>
 
-    <script>
-        const btn = document.getElementById("startBtn");
-        const status = document.getElementById("status");
+<!-- calibratie punten -->
+<div class="dot" style="top: 60px; left: 60px;"></div>
+<div class="dot" style="top: 60px; right: 60px;"></div>
+<div class="dot" style="bottom: 60px; left: 60px;"></div>
+<div class="dot" style="bottom: 60px; right: 60px;"></div>
+<div class="dot" style="top: 50%; left: 50%;"></div>
 
-        btn.onclick = async () => {
-            status.innerText = "Status: starten...";
+<script>
+let started = false;
 
-            try {
-                await webgazer.setGazeListener(function(data, elapsedTime) {
-                    if (data == null) return;
+const tracker = document.getElementById("tracker");
 
-                    console.log("X:", data.x, "Y:", data.y);
-                }).begin();
+document.getElementById("startBtn").onclick = async () => {
 
-                webgazer.showVideoPreview(true)
-                         .showPredictionPoints(true);
+    if (started) return;
+    started = true;
 
-                status.innerText = "Status: WebGazer actief 👀";
+    await webgazer
+        .setRegression('ridge')
+        .setGazeListener((data) => {
 
-            } catch (err) {
-                console.error(err);
-                status.innerText = "Fout: camera niet toegestaan";
-            }
-        };
-    </script>
+            if (data == null) return;
+
+            // beweeg blauwe punt naar gaze positie
+            tracker.style.left = data.x + "px";
+            tracker.style.top = data.y + "px";
+
+            console.log("Gaze:", data.x, data.y);
+        })
+        .begin();
+
+    // BELANGRIJK: visualisatie aanzetten
+    webgazer.showVideoPreview(true)
+            .showFaceOverlay(true)
+            .showFaceFeedbackBox(true)
+            .showPredictionPoints(true);
+
+    document.getElementById("info").innerText =
+        "WebGazer actief: kijk rond + klik op rode punten";
+};
+
+
+// calibratie punten trainen
+document.querySelectorAll(".dot").forEach(dot => {
+    dot.addEventListener("click", () => {
+
+        webgazer.recordScreenPosition(
+            dot.offsetLeft,
+            dot.offsetTop,
+            "click"
+        );
+
+        dot.style.background = "green";
+    });
+});
+</script>
 
 </body>
 </html>

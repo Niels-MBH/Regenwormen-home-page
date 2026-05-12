@@ -1,138 +1,83 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eye Tracking</title>
 
-<title>WebGazer Test</title>
+  <!-- WebGazer -->
+  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
-<script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+      cursor: none;
+    }
 
-<style>
+    #dot {
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      left: 50%;
+      top: 50%;
+    }
 
-body{
-    margin:0;
-    overflow:hidden;
-    background:#eee;
-    font-family:Arial;
-    text-align:center;
-}
-
-h1{
-    margin-top:20px;
-}
-
-button{
-    padding:15px 30px;
-    font-size:18px;
-    cursor:pointer;
-}
-
-#tracker{
-    position:fixed;
-    width:20px;
-    height:20px;
-    border-radius:50%;
-    background:blue;
-    pointer-events:none;
-    transform:translate(-50%, -50%);
-    z-index:99999;
-    display:none;
-}
-
-.dot{
-    position:fixed;
-    width:35px;
-    height:35px;
-    border-radius:50%;
-    background:red;
-    transform:translate(-50%, -50%);
-    cursor:pointer;
-    border:3px solid white;
-}
-
-</style>
+    #text {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+  </style>
 </head>
 
 <body>
 
-<h1>WebGazer</h1>
-
-<button id="start">
-START
-</button>
-
-<div id="tracker"></div>
-
-<div class="dot" style="top:10%;left:10%"></div>
-<div class="dot" style="top:10%;left:50%"></div>
-<div class="dot" style="top:10%;left:90%"></div>
-
-<div class="dot" style="top:50%;left:10%"></div>
-<div class="dot" style="top:50%;left:50%"></div>
-<div class="dot" style="top:50%;left:90%"></div>
-
-<div class="dot" style="top:85%;left:10%"></div>
-<div class="dot" style="top:85%;left:50%"></div>
-<div class="dot" style="top:85%;left:90%"></div>
+<div id="dot"></div>
+<div id="text">Eye tracking actief...</div>
 
 <script>
+  const dot = document.getElementById("dot");
 
-const start = document.getElementById("start");
-const tracker = document.getElementById("tracker");
+  let smoothX = window.innerWidth / 2;
+  let smoothY = window.innerHeight / 2;
 
-let started = false;
+  window.onload = function () {
 
-start.onclick = async () => {
+    webgazer.setGazeListener((data) => {
+      if (!data) return;
 
-    try{
+      const x = data.x;
+      const y = data.y;
 
-        webgazer.setRegression("ridge");
+      // smoothing (stabieler beeld)
+      smoothX = smoothX * 0.85 + x * 0.15;
+      smoothY = smoothY * 0.85 + y * 0.15;
 
-        webgazer.setGazeListener((data) => {
+      // verplaats dot
+      dot.style.left = smoothX + "px";
+      dot.style.top = smoothY + "px";
 
-            if(!data) return;
+      // 👉 HIER kun je koppelen aan je regenwormen spel:
+      // onEyeMove(smoothX, smoothY);
 
-            tracker.style.display = "block";
+    }).begin();
 
-            tracker.style.left = data.x + "px";
-            tracker.style.top = data.y + "px";
+    // UI uitzetten (belangrijk)
+    webgazer.showVideoPreview(false)
+            .showFaceOverlay(false)
+            .showFaceFeedbackBox(false);
 
-        });
-
-        await webgazer.begin();
-
-        started = true;
-
-        alert("webgazer gestart");
-
-    }catch(err){
-
-        console.error(err);
-
-        alert(err.message);
-
-    }
-
-};
-
-document.querySelectorAll(".dot").forEach(dot => {
-
-    dot.onclick = () => {
-
-        if(!started){
-
-            alert("start eerst");
-
-            return;
-        }
-
-        dot.style.background = "green";
-
-    };
-
-});
-
+    console.log("Eye tracking gestart");
+  };
 </script>
 
 </body>

@@ -1,311 +1,139 @@
-De fout komt doordat jouw versie van WebGazer deze functies niet heeft:
-
-```js
-showFaceOverlay()
-showFaceFeedbackBox()
-```
-
-Daarom krijg je:
-
-```text
-Error: t is not a function
-```
-
-Je gebruikt waarschijnlijk een nieuwere/minified build van WebGazer waarin die functies verwijderd zijn.
-
-Gebruik deze volledig gefixte versie.
-Deze werkt zonder die oude functies.
-
-Vervang je HELE bestand met dit:
-
-```html id="3mzjlwm"
 <!DOCTYPE html>
 <html lang="nl">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>WebGazer Eye Tracking</title>
+<title>WebGazer Test</title>
 
-    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+<script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<style>
 
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #ececec;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            height: 100vh;
-        }
+body{
+    margin:0;
+    overflow:hidden;
+    background:#eee;
+    font-family:Arial;
+    text-align:center;
+}
 
-        h1 {
-            margin-top: 20px;
-            font-size: 28px;
-        }
+h1{
+    margin-top:20px;
+}
 
-        #startBtn {
-            padding: 14px 28px;
-            font-size: 18px;
-            border: none;
-            border-radius: 10px;
-            background: #2196F3;
-            color: white;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+button{
+    padding:15px 30px;
+    font-size:18px;
+    cursor:pointer;
+}
 
-        #startBtn:hover {
-            opacity: 0.9;
-        }
+#tracker{
+    position:fixed;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:blue;
+    pointer-events:none;
+    transform:translate(-50%, -50%);
+    z-index:99999;
+    display:none;
+}
 
-        #info {
-            margin-top: 15px;
-            font-size: 20px;
-        }
+.dot{
+    position:fixed;
+    width:35px;
+    height:35px;
+    border-radius:50%;
+    background:red;
+    transform:translate(-50%, -50%);
+    cursor:pointer;
+    border:3px solid white;
+}
 
-        #gazeTracker {
-            position: fixed;
-            width: 25px;
-            height: 25px;
-            background: rgba(0, 120, 255, 0.7);
-            border: 3px solid white;
-            border-radius: 50%;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            z-index: 999999;
-            display: none;
-        }
-
-        #debugLog {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: black;
-            color: lime;
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            z-index: 999999;
-        }
-
-        .dot {
-            position: fixed;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: red;
-            transform: translate(-50%, -50%);
-            border: 3px solid white;
-            cursor: pointer;
-            z-index: 99999;
-            transition: 0.2s;
-            box-shadow: 0 0 12px rgba(0,0,0,0.3);
-        }
-
-        .dot:hover {
-            transform: translate(-50%, -50%) scale(1.2);
-        }
-
-        .dot span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        #webgazerVideoContainer {
-            position: fixed !important;
-            top: 10px !important;
-            left: 10px !important;
-            width: 320px !important;
-            height: 240px !important;
-            z-index: 1 !important;
-        }
-    </style>
+</style>
 </head>
 
 <body>
 
-    <h1>WebGazer Eye Tracking</h1>
+<h1>WebGazer</h1>
 
-    <button id="startBtn">
-        ▶ Start Camera & Tracking
-    </button>
+<button id="start">
+START
+</button>
 
-    <div id="info">
-        Klik op start
-    </div>
+<div id="tracker"></div>
 
-    <div id="gazeTracker"></div>
+<div class="dot" style="top:10%;left:10%"></div>
+<div class="dot" style="top:10%;left:50%"></div>
+<div class="dot" style="top:10%;left:90%"></div>
 
-    <div id="debugLog">
-        wachten...
-    </div>
+<div class="dot" style="top:50%;left:10%"></div>
+<div class="dot" style="top:50%;left:50%"></div>
+<div class="dot" style="top:50%;left:90%"></div>
 
-    <!-- DOTS -->
+<div class="dot" style="top:85%;left:10%"></div>
+<div class="dot" style="top:85%;left:50%"></div>
+<div class="dot" style="top:85%;left:90%"></div>
 
-    <div class="dot" style="top:10%; left:10%;">
-        <span>1</span>
-    </div>
+<script>
 
-    <div class="dot" style="top:10%; left:50%;">
-        <span>2</span>
-    </div>
+const start = document.getElementById("start");
+const tracker = document.getElementById("tracker");
 
-    <div class="dot" style="top:10%; left:90%;">
-        <span>3</span>
-    </div>
+let started = false;
 
-    <div class="dot" style="top:50%; left:10%;">
-        <span>4</span>
-    </div>
+start.onclick = async () => {
 
-    <div class="dot" style="top:50%; left:50%;">
-        <span>5</span>
-    </div>
+    try{
 
-    <div class="dot" style="top:50%; left:90%;">
-        <span>6</span>
-    </div>
+        webgazer.setRegression("ridge");
 
-    <div class="dot" style="top:85%; left:10%;">
-        <span>7</span>
-    </div>
+        webgazer.setGazeListener((data) => {
 
-    <div class="dot" style="top:85%; left:50%;">
-        <span>8</span>
-    </div>
+            if(!data) return;
 
-    <div class="dot" style="top:85%; left:90%;">
-        <span>9</span>
-    </div>
+            tracker.style.display = "block";
 
-    <script>
+            tracker.style.left = data.x + "px";
+            tracker.style.top = data.y + "px";
 
-        const startBtn = document.getElementById("startBtn");
-        const info = document.getElementById("info");
-        const gazeTracker = document.getElementById("gazeTracker");
-        const debugLog = document.getElementById("debugLog");
-        const dots = document.querySelectorAll(".dot");
+        });
 
-        let started = false;
+        await webgazer.begin();
 
-        function log(text) {
-            console.log(text);
-            debugLog.textContent = text;
+        started = true;
+
+        alert("webgazer gestart");
+
+    }catch(err){
+
+        console.error(err);
+
+        alert(err.message);
+
+    }
+
+};
+
+document.querySelectorAll(".dot").forEach(dot => {
+
+    dot.onclick = () => {
+
+        if(!started){
+
+            alert("start eerst");
+
+            return;
         }
 
-        // START
-        startBtn.addEventListener("click", async () => {
+        dot.style.background = "green";
 
-            try {
+    };
 
-                info.textContent = "Camera starten...";
+});
 
-                webgazer.setRegression("ridge");
-
-                webgazer.setGazeListener((data) => {
-
-                    if (!data) return;
-
-                    gazeTracker.style.display = "block";
-
-                    gazeTracker.style.left = data.x + "px";
-                    gazeTracker.style.top = data.y + "px";
-
-                });
-
-                await webgazer.begin();
-
-                // Alleen deze functie gebruiken
-                webgazer.showPredictionPoints(false);
-
-                started = true;
-
-                startBtn.disabled = true;
-
-                info.textContent =
-                    "✅ WebGazer actief! Klik op de rode punten.";
-
-                log("tracking gestart");
-
-            } catch (err) {
-
-                console.error(err);
-
-                info.textContent =
-                    "❌ " + err.message;
-
-                log(err.message);
-            }
-
-        });
-
-        // CALIBRATION
-        dots.forEach(dot => {
-
-            let clicks = 0;
-
-            dot.addEventListener("click", () => {
-
-                if (!started) {
-
-                    info.textContent =
-                        "⚠️ Start eerst WebGazer";
-
-                    return;
-                }
-
-                const rect = dot.getBoundingClientRect();
-
-                const x = rect.left + rect.width / 2;
-                const y = rect.top + rect.height / 2;
-
-                // Alleen proberen als functie bestaat
-                if (typeof webgazer.recordScreenPosition === "function") {
-
-                    webgazer.recordScreenPosition(x, y);
-
-                }
-
-                clicks++;
-
-                dot.querySelector("span").textContent = clicks;
-
-                dot.style.background = "green";
-
-                log(`dot calibrated ${clicks}x`);
-
-                if (clicks >= 5) {
-
-                    dot.style.background = "#555";
-                    dot.style.pointerEvents = "none";
-                }
-
-            });
-
-        });
-
-        window.addEventListener("beforeunload", () => {
-
-            if (window.webgazer) {
-                webgazer.end();
-            }
-
-        });
-
-    </script>
+</script>
 
 </body>
-
 </html>
-```

@@ -1,357 +1,320 @@
+```html
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <title>WebGazer Complete Test</title>
-    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f5f5f5;
-            /* Voorkom scrollen zodat fixed elementen correct werken */
-            overflow: hidden;
-            height: 100vh;
-        }
+<title>WebGazer Eye Tracking</title>
 
-        h1 {
-            margin: 15px 0 5px;
-            font-size: 22px;
-        }
+<script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
-        #startBtn {
-            font-size: 16px;
-            padding: 8px 20px;
-            margin: 5px 0;
-            cursor: pointer;
-            background: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 6px;
-        }
+<style>
 
-        #startBtn:disabled {
-            background: #aaa;
-            cursor: not-allowed;
-        }
+*{
+    box-sizing:border-box;
+}
 
-        #info {
-            margin: 5px 0;
-            font-size: 15px;
-            color: #333;
-        }
+body{
+    margin:0;
+    overflow:hidden;
+    background:#f5f5f5;
+    font-family:Arial, sans-serif;
+    text-align:center;
+    height:100vh;
+}
 
-        #debugLog {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: #0f0;
-            font-size: 12px;
-            font-family: monospace;
-            padding: 8px 12px;
-            border-radius: 6px;
-            text-align: left;
-            /* Boven alles, maar pointer-events uit zodat het niet stoort */
-            z-index: 99999;
-            pointer-events: none;
-            max-width: 300px;
-        }
+h1{
+    margin-top:20px;
+    font-size:28px;
+}
 
-        /* ── WebGazer video container ──────────────────────────────
-           WebGazer plaatst zelf een <video> en <canvas> in de DOM.
-           We forceren die naar een veilige hoek met lage z-index
-           zodat ze NOOIT over de calibratiepunten vallen.          */
-        #webgazerVideoContainer {
-            position: fixed !important;
-            bottom: 10px !important;
-            right: 10px !important;
-            top: auto !important;
-            left: auto !important;
-            width: 160px !important;
-            height: 120px !important;
-            /* Laag genoeg om onder de dots te blijven */
-            z-index: 100 !important;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid #2196F3;
-        }
+#startBtn{
+    padding:12px 24px;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+    background:#2196F3;
+    color:white;
+    cursor:pointer;
+    margin-top:10px;
+}
 
-        /* WebGazer injecteert ook losse video/canvas — opvangen */
-        #webgazerVideoFeed,
-        #webgazerFaceOverlay,
-        #webgazerFaceFeedbackBox {
-            position: fixed !important;
-            bottom: 10px !important;
-            right: 10px !important;
-            top: auto !important;
-            left: auto !important;
-            width: 160px !important;
-            height: 120px !important;
-            z-index: 100 !important;
-        }
+#startBtn:hover{
+    opacity:0.9;
+}
 
-        /* ── Gaze-cursor ───────────────────────────────────────── */
-        #gazeTracker {
-            position: fixed;
-            /* Startpositie buiten beeld; wordt direct door JS gezet  */
-            top: -30px;
-            left: -30px;
-            width: 24px;
-            height: 24px;
-            /* transform zorgt dat het middelpunt op de gaze-coördinaat zit */
-            transform: translate(-50%, -50%);
-            background: rgba(0, 120, 255, 0.6);
-            border: 3px solid #fff;
-            border-radius: 50%;
-            pointer-events: none;
-            /* Altijd bovenaan */
-            z-index: 99998;
-            box-shadow: 0 0 8px rgba(0,0,0,0.4);
-            transition: left 0.05s linear, top 0.05s linear;
-            display: none; /* verborgen tot WebGazer actief is */
-        }
+#info{
+    margin-top:10px;
+    font-size:16px;
+    color:#333;
+}
 
-        /* ── Calibratiepunten ──────────────────────────────────── */
-        .dot {
-            position: fixed;        /* fixed i.p.v. absolute: werkt beter met vh/vw */
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: red;
-            cursor: pointer;
-            /* Boven de webcam-feed, onder de gaze-tracker */
-            z-index: 1000;
-            border: 3px solid #fff;
-            box-shadow: 0 0 6px rgba(0,0,0,0.5);
-            transition: background 0.3s, transform 0.15s;
-            /* transform-origin in het midden voor de klik-animatie */
-            transform: translate(-50%, -50%);
-        }
+#gazeTracker{
+    position:fixed;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    background:rgba(0,120,255,0.7);
+    border:3px solid white;
+    pointer-events:none;
+    transform:translate(-50%, -50%);
+    z-index:99999;
+    display:none;
+    box-shadow:0 0 10px rgba(0,0,0,0.4);
+}
 
-        .dot:hover {
-            transform: translate(-50%, -50%) scale(1.3);
-        }
+#debugLog{
+    position:fixed;
+    bottom:10px;
+    left:10px;
+    background:rgba(0,0,0,0.75);
+    color:#00ff00;
+    padding:10px;
+    border-radius:8px;
+    font-size:12px;
+    font-family:monospace;
+    z-index:99999;
+}
 
-        .dot.clicked {
-            background: green;
-            transform: translate(-50%, -50%) scale(0.9);
-        }
+.dot{
+    position:fixed;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:red;
+    transform:translate(-50%, -50%);
+    cursor:pointer;
+    z-index:9999;
+    border:3px solid white;
+    transition:0.2s;
+    box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
 
-        /* Teller op de dot */
-        .dot span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            pointer-events: none;
-            user-select: none;
-        }
-    </style>
+.dot:hover{
+    transform:translate(-50%, -50%) scale(1.2);
+}
+
+.dot.clicked{
+    background:green;
+}
+
+.dot span{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    color:white;
+    font-size:11px;
+    font-weight:bold;
+    user-select:none;
+}
+
+</style>
 </head>
+
 <body>
 
 <h1>WebGazer Eye Tracking</h1>
-<button id="startBtn">▶ Start Camera &amp; Tracking</button>
-<div id="info">Druk op de knop om te beginnen</div>
 
-<!-- Gaze cursor -->
+<button id="startBtn">
+    ▶ Start Camera & Tracking
+</button>
+
+<div id="info">
+    Klik op start om te beginnen
+</div>
+
 <div id="gazeTracker"></div>
 
-<!-- Debug log rechtsboven -->
-<div id="debugLog">Wacht op start…</div>
+<div id="debugLog">
+    Wachten...
+</div>
 
-<!--
-    Calibratiepunten: 9 punten verspreid over het scherm.
-    Posities als percentages van viewport breedte/hoogte.
-    Met translate(-50%,-50%) staat het middelpunt exact op die positie.
-    Zo valt geen enkel punt buiten beeld of achter de webcam.
--->
-<div class="dot" style="top:10%; left:10%;"  data-label="1"><span>1</span></div>
-<div class="dot" style="top:10%; left:50%;"  data-label="2"><span>2</span></div>
-<div class="dot" style="top:10%; left:90%;"  data-label="3"><span>3</span></div>
-<div class="dot" style="top:50%; left:10%;"  data-label="4"><span>4</span></div>
-<div class="dot" style="top:50%; left:50%;"  data-label="5"><span>5</span></div>
-<div class="dot" style="top:50%; left:90%;"  data-label="6"><span>6</span></div>
-<!-- Onderste rij: 80% i.p.v. 90% zodat ze niet achter de webcam vallen -->
-<div class="dot" style="top:80%; left:10%;"  data-label="7"><span>7</span></div>
-<div class="dot" style="top:80%; left:50%;"  data-label="8"><span>8</span></div>
-<div class="dot" style="top:80%; left:90%;"  data-label="9"><span>9</span></div>
+<!-- Calibration dots -->
+
+<div class="dot" style="top:10%; left:10%;" data-id="1">
+    <span>1</span>
+</div>
+
+<div class="dot" style="top:10%; left:50%;" data-id="2">
+    <span>2</span>
+</div>
+
+<div class="dot" style="top:10%; left:90%;" data-id="3">
+    <span>3</span>
+</div>
+
+<div class="dot" style="top:50%; left:10%;" data-id="4">
+    <span>4</span>
+</div>
+
+<div class="dot" style="top:50%; left:50%;" data-id="5">
+    <span>5</span>
+</div>
+
+<div class="dot" style="top:50%; left:90%;" data-id="6">
+    <span>6</span>
+</div>
+
+<div class="dot" style="top:85%; left:10%;" data-id="7">
+    <span>7</span>
+</div>
+
+<div class="dot" style="top:85%; left:50%;" data-id="8">
+    <span>8</span>
+</div>
+
+<div class="dot" style="top:85%; left:90%;" data-id="9">
+    <span>9</span>
+</div>
 
 <script>
-    /* ── Referenties ─────────────────────────────────────────── */
-    const startBtn    = document.getElementById("startBtn");
-    const infoEl      = document.getElementById("info");
-    const gazeTracker = document.getElementById("gazeTracker");
-    const debugLog    = document.getElementById("debugLog");
-    const dots        = document.querySelectorAll(".dot");
 
-    let webgazerReady = false;
-    let gazeCount     = 0;       // telt ontvangen predictions
-    let lastGaze      = null;
+const startBtn = document.getElementById("startBtn");
+const info = document.getElementById("info");
+const gazeTracker = document.getElementById("gazeTracker");
+const debugLog = document.getElementById("debugLog");
+const dots = document.querySelectorAll(".dot");
 
-    /* ── Debug helper ────────────────────────────────────────── */
-    function log(msg) {
-        console.log("[WebGazer]", msg);
-        debugLog.textContent = msg;
+let started = false;
+let gazeCounter = 0;
+
+function log(message){
+    console.log(message);
+    debugLog.textContent = message;
+}
+
+function gazeListener(data){
+
+    if(!data){
+        return;
     }
 
-    /* ── Gaze listener ───────────────────────────────────────── */
-    function onGaze(data, elapsedTime) {
-        if (!data) {
-            // null prediction = gezicht niet gevonden
+    gazeCounter++;
+
+    const x = Math.max(
+        0,
+        Math.min(window.innerWidth, data.x)
+    );
+
+    const y = Math.max(
+        0,
+        Math.min(window.innerHeight, data.y)
+    );
+
+    gazeTracker.style.left = x + "px";
+    gazeTracker.style.top = y + "px";
+
+    if(gazeCounter % 25 === 0){
+        log(`x=${Math.round(x)} y=${Math.round(y)}`);
+    }
+}
+
+startBtn.addEventListener("click", async () => {
+
+    if(started){
+        return;
+    }
+
+    try{
+
+        info.textContent = "Camera starten...";
+
+        webgazer
+            .setRegression("ridge")
+            .setTracker("clmtrackr")
+            .setGazeListener(gazeListener);
+
+        await webgazer.begin();
+
+        webgazer.showVideoPreview(true);
+
+        webgazer.showPredictionPoints(false);
+
+        webgazer.showFaceOverlay(false);
+
+        webgazer.showFaceFeedbackBox(false);
+
+        gazeTracker.style.display = "block";
+
+        started = true;
+
+        startBtn.disabled = true;
+
+        info.textContent =
+            "✅ Tracking actief! Klik meerdere keren op alle rode punten.";
+
+        log("WebGazer gestart");
+
+    }catch(error){
+
+        console.error(error);
+
+        info.textContent =
+            "❌ Fout: " + error.message;
+
+        log(error.message);
+    }
+});
+
+dots.forEach(dot => {
+
+    let clicks = 0;
+
+    dot.addEventListener("click", () => {
+
+        if(!started){
+
+            info.textContent =
+                "⚠️ Start eerst de camera";
+
             return;
         }
 
-        gazeCount++;
+        const rect = dot.getBoundingClientRect();
 
-        // Begrens de coördinaten tot het zichtbare scherm
-        const x = Math.max(0, Math.min(window.innerWidth,  data.x));
-        const y = Math.max(0, Math.min(window.innerHeight, data.y));
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
 
-        // Verplaats de cursor
-        gazeTracker.style.left = x + "px";
-        gazeTracker.style.top  = y + "px";
+        try{
 
-        lastGaze = { x, y };
+            webgazer.recordScreenPosition(x, y, "click");
 
-        // Update debug iedere 30 frames zodat het leesbaar blijft
-        if (gazeCount % 30 === 0) {
-            log(`Gaze #${gazeCount}: x=${Math.round(x)}, y=${Math.round(y)}`);
+        }catch(e){
+
+            console.log("Calibration fallback");
         }
-    }
 
-    /* ── WebGazer video containers naar goede plek duwen ────── */
-    function repositionWebgazerVideo() {
-        // WebGazer injecteert elementen asynchroon; poll totdat ze bestaan
-        const ids = [
-            "webgazerVideoContainer",
-            "webgazerVideoFeed",
-            "webgazerFaceOverlay",
-            "webgazerFaceFeedbackBox"
-        ];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            // Overschrijf inline styles die WebGazer zelf zet
-            el.style.cssText += `
-                position: fixed !important;
-                bottom: 10px !important;
-                right: 10px !important;
-                top: auto !important;
-                left: auto !important;
-                width: 160px !important;
-                height: 120px !important;
-                z-index: 100 !important;
-            `;
-        });
-    }
+        clicks++;
 
-    /* ── Start WebGazer ──────────────────────────────────────── */
-    startBtn.addEventListener("click", async () => {
-        startBtn.disabled = true;
-        infoEl.textContent = "Camera initialiseren…";
-        log("begin() wordt aangeroepen…");
+        dot.querySelector("span").textContent = clicks;
 
-        try {
-            // 1. Stel regression in VOOR begin()
-            webgazer.setRegression("ridge");
+        dot.classList.add("clicked");
 
-            // 2. Koppel de gaze listener VOOR begin()
-            webgazer.setGazeListener(onGaze);
+        log(
+            `Punt ${dot.dataset.id}: ${clicks}x`
+        );
 
-            // 3. Schakel opgeslagen data uit om met schone lei te beginnen
-            webgazer.clearData();
+        if(clicks >= 5){
 
-            // 4. Start WebGazer (vraagt cameratoestemming)
-            await webgazer.begin();
+            dot.style.background = "#555";
 
-            log("begin() geslaagd — webcam actief");
-
-            // 5. Configureer visualisatie NA begin()
-            webgazer.showVideoPreview(true);
-            webgazer.showFaceOverlay(true);
-            webgazer.showFaceFeedbackBox(true);
-            webgazer.showPredictionPoints(false); // eigen cursor gebruiken
-
-            // 6. Zet de gaze-cursor zichtbaar
-            gazeTracker.style.display = "block";
-
-            // 7. Herschik de WebGazer video-elementen
-            //    Doe dit direct én na korte delay (WebGazer is asynchroon)
-            repositionWebgazerVideo();
-            setTimeout(repositionWebgazerVideo, 500);
-            setTimeout(repositionWebgazerVideo, 1500);
-
-            // 8. Zet de prediction loop aan (verborgen achter begin(), maar
-            //    expliciet resume() aanroepen lost timing-problemen op)
-            webgazer.resume();
-
-            webgazerReady = true;
-            infoEl.textContent =
-                "✅ WebGazer actief! Klik op alle rode punten om te calibreren.";
-
-        } catch (err) {
-            log("FOUT: " + err.message);
-            infoEl.textContent = "❌ Fout: " + err.message;
-            startBtn.disabled = false;
+            dot.style.pointerEvents = "none";
         }
     });
+});
 
-    /* ── Calibratie klik handler ─────────────────────────────── */
-    dots.forEach(dot => {
-        // Houd bij hoe vaak er op geklikt is (meer clicks = betere calibratie)
-        let clickCount = 0;
-        const label    = dot.querySelector("span");
+window.addEventListener("beforeunload", () => {
 
-        dot.addEventListener("click", () => {
-            if (!webgazerReady) {
-                infoEl.textContent = "⚠️ Start eerst WebGazer!";
-                return;
-            }
+    if(window.webgazer){
 
-            // Bereken het exacte middelpunt van de dot in viewport-coördinaten
-            const rect = dot.getBoundingClientRect();
-            const cx   = rect.left + rect.width  / 2;
-            const cy   = rect.top  + rect.height / 2;
+        webgazer.end();
+    }
+});
 
-            // Stuur coördinaten naar WebGazer — gebruik cx/cy, NIET offsetLeft
-            webgazer.recordScreenPosition(cx, cy, "click");
-
-            clickCount++;
-            dot.classList.add("clicked");
-            if (label) label.textContent = clickCount;
-
-            log(`Punt ${dot.dataset.label} gekalibreerd (${clickCount}×) op (${Math.round(cx)}, ${Math.round(cy)})`);
-
-            // Na 5 clicks op hetzelfde punt grijs maken (genoeg data)
-            if (clickCount >= 5) {
-                dot.style.background = "#555";
-                dot.style.cursor = "default";
-            }
-        });
-    });
-
-    /* ── Periodieke health-check ─────────────────────────────── */
-    setInterval(() => {
-        if (!webgazerReady) return;
-
-        // Als we al 5 seconden geen gaze ontvangen → waarschuwing
-        if (gazeCount === 0) {
-            log("⚠️ Geen predictions ontvangen — is het gezicht zichtbaar?");
-        }
-
-        // Herpositioneer webcam-preview voor het geval WebGazer hem verplaatste
-        repositionWebgazerVideo();
-    }, 5000);
 </script>
+
 </body>
 </html>
+```

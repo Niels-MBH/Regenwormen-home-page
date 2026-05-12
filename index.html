@@ -1,320 +1,308 @@
-```html
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>WebGazer Eye Tracking</title>
+    <title>WebGazer Eye Tracking</title>
 
-<script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
-<style>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-*{
-    box-sizing:border-box;
-}
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            height: 100vh;
+        }
 
-body{
-    margin:0;
-    overflow:hidden;
-    background:#f5f5f5;
-    font-family:Arial, sans-serif;
-    text-align:center;
-    height:100vh;
-}
+        h1 {
+            margin-top: 20px;
+            font-size: 28px;
+        }
 
-h1{
-    margin-top:20px;
-    font-size:28px;
-}
+        #startBtn {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #2196F3;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
 
-#startBtn{
-    padding:12px 24px;
-    font-size:16px;
-    border:none;
-    border-radius:8px;
-    background:#2196F3;
-    color:white;
-    cursor:pointer;
-    margin-top:10px;
-}
+        #startBtn:hover {
+            opacity: 0.9;
+        }
 
-#startBtn:hover{
-    opacity:0.9;
-}
+        #startBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
-#info{
-    margin-top:10px;
-    font-size:16px;
-    color:#333;
-}
+        #info {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #333;
+        }
 
-#gazeTracker{
-    position:fixed;
-    width:24px;
-    height:24px;
-    border-radius:50%;
-    background:rgba(0,120,255,0.7);
-    border:3px solid white;
-    pointer-events:none;
-    transform:translate(-50%, -50%);
-    z-index:99999;
-    display:none;
-    box-shadow:0 0 10px rgba(0,0,0,0.4);
-}
+        #gazeTracker {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 120, 255, 0.7);
+            border: 3px solid white;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 99999;
+            display: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+        }
 
-#debugLog{
-    position:fixed;
-    bottom:10px;
-    left:10px;
-    background:rgba(0,0,0,0.75);
-    color:#00ff00;
-    padding:10px;
-    border-radius:8px;
-    font-size:12px;
-    font-family:monospace;
-    z-index:99999;
-}
+        #debugLog {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            z-index: 99999;
+        }
 
-.dot{
-    position:fixed;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:red;
-    transform:translate(-50%, -50%);
-    cursor:pointer;
-    z-index:9999;
-    border:3px solid white;
-    transition:0.2s;
-    box-shadow:0 0 10px rgba(0,0,0,0.3);
-}
+        .dot {
+            position: fixed;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: red;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 9999;
+            border: 3px solid white;
+            transition: 0.2s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
 
-.dot:hover{
-    transform:translate(-50%, -50%) scale(1.2);
-}
+        .dot:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
 
-.dot.clicked{
-    background:green;
-}
-
-.dot span{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    color:white;
-    font-size:11px;
-    font-weight:bold;
-    user-select:none;
-}
-
-</style>
+        .dot span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            user-select: none;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>WebGazer Eye Tracking</h1>
+    <h1>WebGazer Eye Tracking</h1>
 
-<button id="startBtn">
-    ▶ Start Camera & Tracking
-</button>
+    <button id="startBtn">
+        ▶ Start Camera & Tracking
+    </button>
 
-<div id="info">
-    Klik op start om te beginnen
-</div>
+    <div id="info">
+        Klik op start om te beginnen
+    </div>
 
-<div id="gazeTracker"></div>
+    <div id="gazeTracker"></div>
 
-<div id="debugLog">
-    Wachten...
-</div>
+    <div id="debugLog">
+        Wachten...
+    </div>
 
-<!-- Calibration dots -->
+    <!-- Calibration dots -->
 
-<div class="dot" style="top:10%; left:10%;" data-id="1">
-    <span>1</span>
-</div>
+    <div class="dot" style="top:10%; left:10%;" data-id="1">
+        <span>1</span>
+    </div>
 
-<div class="dot" style="top:10%; left:50%;" data-id="2">
-    <span>2</span>
-</div>
+    <div class="dot" style="top:10%; left:50%;" data-id="2">
+        <span>2</span>
+    </div>
 
-<div class="dot" style="top:10%; left:90%;" data-id="3">
-    <span>3</span>
-</div>
+    <div class="dot" style="top:10%; left:90%;" data-id="3">
+        <span>3</span>
+    </div>
 
-<div class="dot" style="top:50%; left:10%;" data-id="4">
-    <span>4</span>
-</div>
+    <div class="dot" style="top:50%; left:10%;" data-id="4">
+        <span>4</span>
+    </div>
 
-<div class="dot" style="top:50%; left:50%;" data-id="5">
-    <span>5</span>
-</div>
+    <div class="dot" style="top:50%; left:50%;" data-id="5">
+        <span>5</span>
+    </div>
 
-<div class="dot" style="top:50%; left:90%;" data-id="6">
-    <span>6</span>
-</div>
+    <div class="dot" style="top:50%; left:90%;" data-id="6">
+        <span>6</span>
+    </div>
 
-<div class="dot" style="top:85%; left:10%;" data-id="7">
-    <span>7</span>
-</div>
+    <div class="dot" style="top:85%; left:10%;" data-id="7">
+        <span>7</span>
+    </div>
 
-<div class="dot" style="top:85%; left:50%;" data-id="8">
-    <span>8</span>
-</div>
+    <div class="dot" style="top:85%; left:50%;" data-id="8">
+        <span>8</span>
+    </div>
 
-<div class="dot" style="top:85%; left:90%;" data-id="9">
-    <span>9</span>
-</div>
+    <div class="dot" style="top:85%; left:90%;" data-id="9">
+        <span>9</span>
+    </div>
 
-<script>
+    <script>
 
-const startBtn = document.getElementById("startBtn");
-const info = document.getElementById("info");
-const gazeTracker = document.getElementById("gazeTracker");
-const debugLog = document.getElementById("debugLog");
-const dots = document.querySelectorAll(".dot");
+        const startBtn = document.getElementById("startBtn");
+        const info = document.getElementById("info");
+        const gazeTracker = document.getElementById("gazeTracker");
+        const debugLog = document.getElementById("debugLog");
+        const dots = document.querySelectorAll(".dot");
 
-let started = false;
-let gazeCounter = 0;
+        let started = false;
 
-function log(message){
-    console.log(message);
-    debugLog.textContent = message;
-}
-
-function gazeListener(data){
-
-    if(!data){
-        return;
-    }
-
-    gazeCounter++;
-
-    const x = Math.max(
-        0,
-        Math.min(window.innerWidth, data.x)
-    );
-
-    const y = Math.max(
-        0,
-        Math.min(window.innerHeight, data.y)
-    );
-
-    gazeTracker.style.left = x + "px";
-    gazeTracker.style.top = y + "px";
-
-    if(gazeCounter % 25 === 0){
-        log(`x=${Math.round(x)} y=${Math.round(y)}`);
-    }
-}
-
-startBtn.addEventListener("click", async () => {
-
-    if(started){
-        return;
-    }
-
-    try{
-
-        info.textContent = "Camera starten...";
-
-        webgazer
-            .setRegression("ridge")
-            .setTracker("clmtrackr")
-            .setGazeListener(gazeListener);
-
-        await webgazer.begin();
-
-        webgazer.showVideoPreview(true);
-
-        webgazer.showPredictionPoints(false);
-
-        webgazer.showFaceOverlay(false);
-
-        webgazer.showFaceFeedbackBox(false);
-
-        gazeTracker.style.display = "block";
-
-        started = true;
-
-        startBtn.disabled = true;
-
-        info.textContent =
-            "✅ Tracking actief! Klik meerdere keren op alle rode punten.";
-
-        log("WebGazer gestart");
-
-    }catch(error){
-
-        console.error(error);
-
-        info.textContent =
-            "❌ Fout: " + error.message;
-
-        log(error.message);
-    }
-});
-
-dots.forEach(dot => {
-
-    let clicks = 0;
-
-    dot.addEventListener("click", () => {
-
-        if(!started){
-
-            info.textContent =
-                "⚠️ Start eerst de camera";
-
-            return;
+        function log(text) {
+            console.log(text);
+            debugLog.textContent = text;
         }
 
-        const rect = dot.getBoundingClientRect();
+        // START BUTTON
+        startBtn.addEventListener("click", async () => {
 
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
+            try {
 
-        try{
+                info.textContent = "Camera starten...";
 
-            webgazer.recordScreenPosition(x, y, "click");
+                await webgazer
+                    .setRegression("ridge")
+                    .setGazeListener((data) => {
 
-        }catch(e){
+                        if (!data) return;
 
-            console.log("Calibration fallback");
-        }
+                        const x = Math.max(
+                            0,
+                            Math.min(window.innerWidth, data.x)
+                        );
 
-        clicks++;
+                        const y = Math.max(
+                            0,
+                            Math.min(window.innerHeight, data.y)
+                        );
 
-        dot.querySelector("span").textContent = clicks;
+                        gazeTracker.style.display = "block";
 
-        dot.classList.add("clicked");
+                        gazeTracker.style.left = x + "px";
+                        gazeTracker.style.top = y + "px";
 
-        log(
-            `Punt ${dot.dataset.id}: ${clicks}x`
-        );
+                    })
+                    .begin();
 
-        if(clicks >= 5){
+                // WebGazer instellingen
+                webgazer.showPredictionPoints(false);
+                webgazer.showFaceOverlay(false);
+                webgazer.showFaceFeedbackBox(false);
 
-            dot.style.background = "#555";
+                started = true;
 
-            dot.style.pointerEvents = "none";
-        }
-    });
-});
+                startBtn.disabled = true;
 
-window.addEventListener("beforeunload", () => {
+                info.textContent =
+                    "✅ WebGazer actief! Klik meerdere keren op alle rode punten.";
 
-    if(window.webgazer){
+                log("Tracking gestart");
 
-        webgazer.end();
-    }
-});
+            } catch (err) {
 
-</script>
+                console.error(err);
+
+                info.textContent =
+                    "❌ Error: " + err.message;
+
+                log(err.message);
+            }
+
+        });
+
+        // CALIBRATION DOTS
+        dots.forEach(dot => {
+
+            let clicks = 0;
+
+            dot.addEventListener("click", () => {
+
+                if (!started) {
+
+                    info.textContent =
+                        "⚠️ Start eerst WebGazer";
+
+                    return;
+                }
+
+                const rect = dot.getBoundingClientRect();
+
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+
+                try {
+
+                    // Calibration data toevoegen
+                    webgazer.recordScreenPosition(x, y);
+
+                } catch (e) {
+
+                    console.error(e);
+
+                    log("Calibration error");
+                }
+
+                clicks++;
+
+                dot.querySelector("span").textContent = clicks;
+
+                dot.style.background = "green";
+
+                log(`Punt ${dot.dataset.id}: ${clicks}x`);
+
+                // Na 5 clicks uitschakelen
+                if (clicks >= 5) {
+
+                    dot.style.background = "#555";
+                    dot.style.pointerEvents = "none";
+                }
+
+            });
+
+        });
+
+        // Opruimen bij afsluiten
+        window.addEventListener("beforeunload", () => {
+
+            if (window.webgazer) {
+
+                webgazer.end();
+            }
+
+        });
+
+    </script>
 
 </body>
+
 </html>
-```

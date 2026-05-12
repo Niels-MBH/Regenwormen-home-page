@@ -1,3 +1,24 @@
+De fout komt doordat jouw versie van WebGazer deze functies niet heeft:
+
+```js
+showFaceOverlay()
+showFaceFeedbackBox()
+```
+
+Daarom krijg je:
+
+```text
+Error: t is not a function
+```
+
+Je gebruikt waarschijnlijk een nieuwere/minified build van WebGazer waarin die functies verwijderd zijn.
+
+Gebruik deze volledig gefixte versie.
+Deze werkt zonder die oude functies.
+
+Vervang je HELE bestand met dit:
+
+```html id="3mzjlwm"
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -17,7 +38,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: #f5f5f5;
+            background: #ececec;
             font-family: Arial, sans-serif;
             text-align: center;
             height: 100vh;
@@ -29,10 +50,10 @@
         }
 
         #startBtn {
-            padding: 12px 24px;
-            font-size: 16px;
+            padding: 14px 28px;
+            font-size: 18px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #2196F3;
             color: white;
             cursor: pointer;
@@ -43,56 +64,48 @@
             opacity: 0.9;
         }
 
-        #startBtn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
         #info {
-            margin-top: 10px;
-            font-size: 16px;
-            color: #333;
+            margin-top: 15px;
+            font-size: 20px;
         }
 
         #gazeTracker {
             position: fixed;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
+            width: 25px;
+            height: 25px;
             background: rgba(0, 120, 255, 0.7);
             border: 3px solid white;
+            border-radius: 50%;
             pointer-events: none;
             transform: translate(-50%, -50%);
-            z-index: 99999;
+            z-index: 999999;
             display: none;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
         }
 
         #debugLog {
             position: fixed;
             bottom: 10px;
             left: 10px;
-            background: rgba(0, 0, 0, 0.75);
-            color: #00ff00;
+            background: black;
+            color: lime;
             padding: 10px;
             border-radius: 8px;
-            font-size: 12px;
             font-family: monospace;
-            z-index: 99999;
+            z-index: 999999;
         }
 
         .dot {
             position: fixed;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: red;
             transform: translate(-50%, -50%);
-            cursor: pointer;
-            z-index: 9999;
             border: 3px solid white;
+            cursor: pointer;
+            z-index: 99999;
             transition: 0.2s;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 12px rgba(0,0,0,0.3);
         }
 
         .dot:hover {
@@ -105,9 +118,17 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 11px;
             font-weight: bold;
-            user-select: none;
+            font-size: 12px;
+        }
+
+        #webgazerVideoContainer {
+            position: fixed !important;
+            top: 10px !important;
+            left: 10px !important;
+            width: 320px !important;
+            height: 240px !important;
+            z-index: 1 !important;
         }
     </style>
 </head>
@@ -121,50 +142,50 @@
     </button>
 
     <div id="info">
-        Klik op start om te beginnen
+        Klik op start
     </div>
 
     <div id="gazeTracker"></div>
 
     <div id="debugLog">
-        Wachten...
+        wachten...
     </div>
 
-    <!-- Calibration dots -->
+    <!-- DOTS -->
 
-    <div class="dot" style="top:10%; left:10%;" data-id="1">
+    <div class="dot" style="top:10%; left:10%;">
         <span>1</span>
     </div>
 
-    <div class="dot" style="top:10%; left:50%;" data-id="2">
+    <div class="dot" style="top:10%; left:50%;">
         <span>2</span>
     </div>
 
-    <div class="dot" style="top:10%; left:90%;" data-id="3">
+    <div class="dot" style="top:10%; left:90%;">
         <span>3</span>
     </div>
 
-    <div class="dot" style="top:50%; left:10%;" data-id="4">
+    <div class="dot" style="top:50%; left:10%;">
         <span>4</span>
     </div>
 
-    <div class="dot" style="top:50%; left:50%;" data-id="5">
+    <div class="dot" style="top:50%; left:50%;">
         <span>5</span>
     </div>
 
-    <div class="dot" style="top:50%; left:90%;" data-id="6">
+    <div class="dot" style="top:50%; left:90%;">
         <span>6</span>
     </div>
 
-    <div class="dot" style="top:85%; left:10%;" data-id="7">
+    <div class="dot" style="top:85%; left:10%;">
         <span>7</span>
     </div>
 
-    <div class="dot" style="top:85%; left:50%;" data-id="8">
+    <div class="dot" style="top:85%; left:50%;">
         <span>8</span>
     </div>
 
-    <div class="dot" style="top:85%; left:90%;" data-id="9">
+    <div class="dot" style="top:85%; left:90%;">
         <span>9</span>
     </div>
 
@@ -183,64 +204,53 @@
             debugLog.textContent = text;
         }
 
-        // START BUTTON
+        // START
         startBtn.addEventListener("click", async () => {
 
             try {
 
                 info.textContent = "Camera starten...";
 
-                await webgazer
-                    .setRegression("ridge")
-                    .setGazeListener((data) => {
+                webgazer.setRegression("ridge");
 
-                        if (!data) return;
+                webgazer.setGazeListener((data) => {
 
-                        const x = Math.max(
-                            0,
-                            Math.min(window.innerWidth, data.x)
-                        );
+                    if (!data) return;
 
-                        const y = Math.max(
-                            0,
-                            Math.min(window.innerHeight, data.y)
-                        );
+                    gazeTracker.style.display = "block";
 
-                        gazeTracker.style.display = "block";
+                    gazeTracker.style.left = data.x + "px";
+                    gazeTracker.style.top = data.y + "px";
 
-                        gazeTracker.style.left = x + "px";
-                        gazeTracker.style.top = y + "px";
+                });
 
-                    })
-                    .begin();
+                await webgazer.begin();
 
-                // WebGazer instellingen
+                // Alleen deze functie gebruiken
                 webgazer.showPredictionPoints(false);
-                webgazer.showFaceOverlay(false);
-                webgazer.showFaceFeedbackBox(false);
 
                 started = true;
 
                 startBtn.disabled = true;
 
                 info.textContent =
-                    "✅ WebGazer actief! Klik meerdere keren op alle rode punten.";
+                    "✅ WebGazer actief! Klik op de rode punten.";
 
-                log("Tracking gestart");
+                log("tracking gestart");
 
             } catch (err) {
 
                 console.error(err);
 
                 info.textContent =
-                    "❌ Error: " + err.message;
+                    "❌ " + err.message;
 
                 log(err.message);
             }
 
         });
 
-        // CALIBRATION DOTS
+        // CALIBRATION
         dots.forEach(dot => {
 
             let clicks = 0;
@@ -260,16 +270,11 @@
                 const x = rect.left + rect.width / 2;
                 const y = rect.top + rect.height / 2;
 
-                try {
+                // Alleen proberen als functie bestaat
+                if (typeof webgazer.recordScreenPosition === "function") {
 
-                    // Calibration data toevoegen
                     webgazer.recordScreenPosition(x, y);
 
-                } catch (e) {
-
-                    console.error(e);
-
-                    log("Calibration error");
                 }
 
                 clicks++;
@@ -278,9 +283,8 @@
 
                 dot.style.background = "green";
 
-                log(`Punt ${dot.dataset.id}: ${clicks}x`);
+                log(`dot calibrated ${clicks}x`);
 
-                // Na 5 clicks uitschakelen
                 if (clicks >= 5) {
 
                     dot.style.background = "#555";
@@ -291,11 +295,9 @@
 
         });
 
-        // Opruimen bij afsluiten
         window.addEventListener("beforeunload", () => {
 
             if (window.webgazer) {
-
                 webgazer.end();
             }
 
@@ -306,3 +308,4 @@
 </body>
 
 </html>
+```

@@ -5,1225 +5,507 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Oogbesturing – WebGazer Test</title>
 
-  <!--
-    ╔══════════════════════════════════════════════════════════╗
-    ║  OOGBESTURING TESTPAGINA  –  WebGazer.js implementatie  ║
-    ║  Doel: eye tracking testen voor Regenwormen spel        ║
-    ║  Geen backend, geen frameworks, puur HTML/CSS/JS        ║
-    ╚══════════════════════════════════════════════════════════╝
-  -->
-
-  <!-- WebGazer via officiële CDN -->
+  <!-- WebGazer -->
   <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
+  <!-- FIX: controleren of WebGazer geladen is -->
+  <script>
+    window.addEventListener('load', () => {
+      if (typeof webgazer === "undefined") {
+        alert("WebGazer is niet geladen.");
+      } else {
+        console.log("WebGazer succesvol geladen.");
+      }
+    });
+  </script>
+
   <style>
-    /* ─── CSS RESET & BASISVARIABELEN ─────────────────────── */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    body{
+      margin:0;
+      background:#080c14;
+      color:white;
+      font-family:Arial,sans-serif;
+      overflow:hidden;
     }
 
-    :root {
-      --bg-deep:      #080c14;
-      --bg-panel:     #0d1524;
-      --bg-card:      #111d30;
-      --accent-cyan:  #00e5ff;
-      --accent-green: #39ff14;
-      --accent-amber: #ffaa00;
-      --accent-red:   #ff3b3b;
-      --text-main:    #e8f4f8;
-      --text-muted:   #6a8aaa;
-      --border:       #1c3050;
-
-      --calibration-todo:    #334;
-      --calibration-active:  #ffaa00;
-      --calibration-done:    #39ff14;
-      --calibration-size:    44px;
-
-      --cursor-size: 36px;
-      --font-mono:   'Courier New', Courier, monospace;
-      --font-ui:     'Trebuchet MS', 'Segoe UI', sans-serif;
-    }
-
-    html, body {
-      width: 100%; height: 100%;
-      background: var(--bg-deep);
-      color: var(--text-main);
-      font-family: var(--font-ui);
-      overflow: hidden;            /* geen scroll; fullscreen */
-      user-select: none;
-    }
-
-    /* ─── LAAGVOLGORDE (z-index stapel) ──────────────────────
-       1  – webgazer video feed  (WebGazer zet dit automatisch)
-       10 – ui overlay (status / knoppen)
-       20 – gaze cursor
-       30 – kalibratie dots (altijd bovenop alles)
-       99 – splash screen
-    ─────────────────────────────────────────────────────────── */
-
-    /* ─── WEBGAZER VIDEO OVERSCHRIJVEN ──────────────────────
-       WebGazer injecteert #webgazerVideoFeed en canvas.
-       We zetten die laag zodat onze UI er ALTIJD boven staat. */
     #webgazerVideoFeed,
     #webgazerVideoCanvas,
     #webgazerFaceOverlay,
-    #webgazerFaceFeedbackBox {
-      z-index: 1 !important;
-      border-radius: 8px !important;
-      opacity: 0.85 !important;
+    #webgazerFaceFeedbackBox{
+      z-index:1 !important;
+      position:fixed !important;
+      bottom:16px !important;
+      left:16px !important;
+      border-radius:10px !important;
+      border:1px solid #1c3050 !important;
     }
 
-    /* ─── UI LAAG ─────────────────────────────────────────── */
-    #ui-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      pointer-events: none;        /* laat klikken door naar calibratie */
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+    #ui-overlay{
+      position:fixed;
+      inset:0;
+      z-index:10;
+      pointer-events:none;
     }
 
-    /* ─── TOPBALK ─────────────────────────────────────────── */
-    #topbar {
-      pointer-events: all;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
-      background: linear-gradient(180deg, rgba(8,12,20,0.97) 80%, transparent);
-      border-bottom: 1px solid var(--border);
-      gap: 12px;
-      flex-wrap: wrap;
+    #topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:12px;
+      background:rgba(0,0,0,0.8);
+      pointer-events:all;
     }
 
-    #topbar h1 {
-      font-size: clamp(14px, 2.5vw, 20px);
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--accent-cyan);
-      white-space: nowrap;
+    .btn{
+      padding:10px 18px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:bold;
+      margin-left:8px;
     }
 
-    /* Status badges */
-    #status-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
+    #btn-start{
+      background:#00e5ff;
+      color:black;
     }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 99px;
-      font-size: clamp(11px, 1.5vw, 13px);
-      font-family: var(--font-mono);
-      font-weight: 600;
-      border: 1.5px solid;
-      white-space: nowrap;
+    #btn-calibrate{
+      background:#ffaa00;
+      color:black;
     }
 
-    .badge .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      animation: pulse 1.4s ease-in-out infinite;
+    #btn-reset{
+      background:#ff3b3b;
+      color:white;
     }
 
-    @keyframes pulse {
-      0%,100% { opacity: 1; transform: scale(1);   }
-      50%      { opacity: 0.4; transform: scale(0.7); }
+    #instruction-banner{
+      text-align:center;
+      padding:10px;
+      color:#ffaa00;
+      font-weight:bold;
     }
 
-    #badge-tracking { border-color: var(--accent-cyan);  color: var(--accent-cyan);  }
-    #badge-tracking .dot { background: var(--accent-cyan); }
-
-    #badge-face     { border-color: var(--accent-green); color: var(--accent-green); }
-    #badge-face .dot { background: var(--accent-green); }
-
-    #badge-coords   { border-color: var(--text-muted);   color: var(--text-main);
-                      font-size: clamp(10px, 1.4vw, 12px); }
-
-    /* Knoppen in topbar */
-    #btn-row {
-      display: flex;
-      gap: 8px;
-      pointer-events: all;
+    #gaze-cursor{
+      position:fixed;
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      border:3px solid #00e5ff;
+      background:rgba(0,229,255,0.2);
+      pointer-events:none;
+      z-index:20;
+      transform:translate(-50%,-50%);
+      left:-100px;
+      top:-100px;
     }
 
-    .btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1.5px solid;
-      background: transparent;
-      font-family: var(--font-ui);
-      font-size: clamp(12px, 1.6vw, 14px);
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      white-space: nowrap;
-    }
-    .btn:active { transform: scale(0.96); }
-
-    #btn-start     { border-color: var(--accent-cyan);  color: var(--accent-cyan);  }
-    #btn-start:hover { background: rgba(0,229,255,0.12); }
-
-    #btn-calibrate { border-color: var(--accent-amber); color: var(--accent-amber); }
-    #btn-calibrate:hover { background: rgba(255,170,0,0.12); }
-
-    #btn-reset     { border-color: var(--accent-red);   color: var(--accent-red);   }
-    #btn-reset:hover { background: rgba(255,59,59,0.12); }
-
-    /* ─── KALIBRATIE VOORTGANGSBALK ──────────────────────── */
-    #calibration-progress-bar {
-      height: 4px;
-      background: var(--border);
-      position: relative;
-      overflow: hidden;
-    }
-    #calibration-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent-amber), var(--accent-green));
-      width: 0%;
-      transition: width 0.3s ease;
+    .cal-dot{
+      position:fixed;
+      width:42px;
+      height:42px;
+      border-radius:50%;
+      background:#222;
+      border:3px solid #555;
+      z-index:30;
+      transform:translate(-50%,-50%);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      color:white;
+      cursor:pointer;
+      font-weight:bold;
     }
 
-    /* ─── INSTRUCTIEBANNER (onder topbar) ─────────────────── */
-    #instruction-banner {
-      pointer-events: none;
-      text-align: center;
-      padding: 8px 16px;
-      font-size: clamp(13px, 2vw, 16px);
-      font-weight: 600;
-      color: var(--accent-amber);
-      letter-spacing: 0.04em;
-      text-shadow: 0 0 16px rgba(255,170,0,0.5);
-      min-height: 36px;
-      transition: opacity 0.3s;
+    .cal-dot.active{
+      background:rgba(255,170,0,0.2);
+      border-color:#ffaa00;
+      box-shadow:0 0 20px rgba(255,170,0,0.8);
     }
 
-    /* ─── GAZE CURSOR ─────────────────────────────────────── */
-    #gaze-cursor {
-      position: fixed;
-      width: var(--cursor-size);
-      height: var(--cursor-size);
-      border-radius: 50%;
-      border: 3px solid var(--accent-cyan);
-      background: rgba(0, 229, 255, 0.18);
-      box-shadow:
-        0 0 12px rgba(0,229,255,0.8),
-        0 0 24px rgba(0,229,255,0.4),
-        inset 0 0 8px rgba(0,229,255,0.3);
-      pointer-events: none;
-      z-index: 20;
-      transform: translate(-50%, -50%);
-      left: -100px; top: -100px;     /* start buiten beeld */
-      transition: opacity 0.3s;
+    .cal-dot.done{
+      background:rgba(57,255,20,0.2);
+      border-color:#39ff14;
     }
 
-    /* Binnenste puntje */
-    #gaze-cursor::after {
-      content: '';
-      position: absolute;
-      inset: 50%;
-      transform: translate(-50%, -50%);
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent-cyan);
-      box-shadow: 0 0 8px var(--accent-cyan);
-      top: 50%; left: 50%;
+    #splash{
+      position:fixed;
+      inset:0;
+      z-index:99;
+      background:#080c14;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:20px;
+      text-align:center;
+      padding:20px;
     }
 
-    #gaze-cursor.hidden { opacity: 0; }
-
-    /* ─── KALIBRATIE DOTS ─────────────────────────────────── */
-    /*
-      Elke dot heeft position:fixed en z-index:30.
-      Ze staan ALTIJD boven de camera-feed en de cursor.
-    */
-    .cal-dot {
-      position: fixed;
-      width: var(--calibration-size);
-      height: var(--calibration-size);
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 30;                    /* ALTIJD bovenop */
-      transform: translate(-50%, -50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      border: 3px solid;
-      transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-      will-change: transform;
-      pointer-events: all;
+    .start-btn{
+      padding:16px 32px;
+      font-size:20px;
+      border:none;
+      border-radius:12px;
+      background:#00e5ff;
+      color:black;
+      font-weight:bold;
+      cursor:pointer;
     }
 
-    .cal-dot:hover { transform: translate(-50%,-50%) scale(1.15); }
-
-    /* Staat: nog te doen */
-    .cal-dot.todo {
-      background: rgba(30,30,60,0.85);
-      border-color: #445;
-      color: #778;
+    #status{
+      position:fixed;
+      right:20px;
+      bottom:20px;
+      z-index:15;
+      background:rgba(0,0,0,0.7);
+      padding:12px;
+      border-radius:10px;
+      font-family:monospace;
     }
-
-    /* Staat: actief (huidige dot om op te klikken) */
-    .cal-dot.active {
-      background: rgba(255,170,0,0.2);
-      border-color: var(--accent-amber);
-      color: var(--accent-amber);
-      box-shadow: 0 0 20px rgba(255,170,0,0.6), 0 0 40px rgba(255,170,0,0.3);
-      animation: dotPulse 0.9s ease-in-out infinite;
-    }
-
-    @keyframes dotPulse {
-      0%,100% { transform: translate(-50%,-50%) scale(1);    box-shadow: 0 0 20px rgba(255,170,0,0.6), 0 0 40px rgba(255,170,0,0.3); }
-      50%      { transform: translate(-50%,-50%) scale(1.12); box-shadow: 0 0 30px rgba(255,170,0,0.9), 0 0 60px rgba(255,170,0,0.5); }
-    }
-
-    /* Staat: klaar */
-    .cal-dot.done {
-      background: rgba(57,255,20,0.15);
-      border-color: var(--accent-green);
-      color: var(--accent-green);
-      box-shadow: 0 0 12px rgba(57,255,20,0.4);
-      animation: none;
-    }
-
-    /* ─── ONDERPANEEL – klik-teller tijdens kalibratie ─────── */
-    #cal-click-indicator {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 31;
-      display: flex;
-      gap: 8px;
-      pointer-events: none;
-    }
-
-    .click-pip {
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      border: 2px solid var(--accent-amber);
-      background: transparent;
-      transition: background 0.2s;
-    }
-    .click-pip.filled { background: var(--accent-amber); }
-
-    /* ─── GAME INTEGRATION PANEL (rechtsonder) ─────────────── */
-    #game-panel {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      z-index: 10;
-      width: clamp(200px, 22vw, 280px);
-      background: rgba(13,21,36,0.92);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      pointer-events: none;
-      backdrop-filter: blur(8px);
-    }
-
-    #game-panel h3 {
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-
-    .gaze-val {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-family: var(--font-mono);
-      font-size: 13px;
-    }
-
-    .gaze-val span:first-child { color: var(--text-muted); font-size: 11px; }
-    .gaze-val span:last-child  { color: var(--accent-cyan); font-weight: 700; }
-
-    /* ─── SPLASH SCREEN ──────────────────────────────────────
-       Getoond vóór WebGazer geladen is
-    ─────────────────────────────────────────────────────────── */
-    #splash {
-      position: fixed;
-      inset: 0;
-      z-index: 99;
-      background: var(--bg-deep);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      padding: 24px;
-    }
-
-    #splash h2 {
-      font-size: clamp(22px, 5vw, 40px);
-      font-weight: 700;
-      color: var(--accent-cyan);
-      letter-spacing: 0.04em;
-      text-align: center;
-    }
-
-    #splash p {
-      max-width: 520px;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: clamp(13px, 2vw, 16px);
-      line-height: 1.6;
-    }
-
-    #splash .start-btn {
-      padding: 16px 40px;
-      font-size: clamp(16px, 2.5vw, 20px);
-      border-radius: 12px;
-      border: 2px solid var(--accent-cyan);
-      background: rgba(0,229,255,0.1);
-      color: var(--accent-cyan);
-      cursor: pointer;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      transition: background 0.2s, box-shadow 0.2s;
-    }
-    #splash .start-btn:hover {
-      background: rgba(0,229,255,0.22);
-      box-shadow: 0 0 30px rgba(0,229,255,0.4);
-    }
-
-    #splash .warn {
-      color: var(--accent-amber);
-      font-size: clamp(12px, 1.8vw, 14px);
-      max-width: 480px;
-      text-align: center;
-    }
-
-    /* ─── LOADING SPINNER ─────────────────────────────────── */
-    #loading-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 98;
-      background: rgba(8,12,20,0.88);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-    #loading-overlay.active { display: flex; }
-
-    .spinner {
-      width: 48px; height: 48px;
-      border: 4px solid var(--border);
-      border-top-color: var(--accent-cyan);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    #loading-overlay p {
-      color: var(--text-muted);
-      font-size: 14px;
-      font-family: var(--font-mono);
-    }
-
-    /* ─── TOAST MELDINGEN ─────────────────────────────────── */
-    #toast-container {
-      position: fixed;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 95;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      pointer-events: none;
-    }
-
-    .toast {
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      text-align: center;
-      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
-      white-space: nowrap;
-    }
-    .toast.info    { background: rgba(0,229,255,0.2);  border: 1px solid var(--accent-cyan);  color: var(--accent-cyan);  }
-    .toast.success { background: rgba(57,255,20,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); }
-    .toast.warn    { background: rgba(255,170,0,0.15); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
-
-    @keyframes toastIn  { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes toastOut { from { opacity:1; } to { opacity:0; } }
-
-    /* ─── CALIBRATIE COMPLEET OVERLAY ────────────────────── */
-    #cal-complete {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      background: rgba(8,12,20,0.75);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-    #cal-complete.active { display: flex; }
-
-    .cal-complete-box {
-      background: var(--bg-card);
-      border: 2px solid var(--accent-green);
-      border-radius: 16px;
-      padding: 36px 48px;
-      text-align: center;
-      max-width: 420px;
-      box-shadow: 0 0 40px rgba(57,255,20,0.2);
-    }
-    .cal-complete-box h2 {
-      font-size: 28px;
-      color: var(--accent-green);
-      margin-bottom: 12px;
-    }
-    .cal-complete-box p {
-      color: var(--text-muted);
-      font-size: 15px;
-      margin-bottom: 24px;
-      line-height: 1.6;
-    }
-    .cal-complete-box button {
-      padding: 12px 32px;
-      border-radius: 8px;
-      border: 2px solid var(--accent-green);
-      background: rgba(57,255,20,0.12);
-      color: var(--accent-green);
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .cal-complete-box button:hover { background: rgba(57,255,20,0.25); }
   </style>
 </head>
 <body>
 
-  <!-- ─────────────────────────────────────────────────────────
-       SPLASH SCREEN – getoond vóór tracking begint
-  ──────────────────────────────────────────────────────────── -->
-  <div id="splash">
-    <h2>👁 Oogbesturing Testpagina</h2>
-    <p>
-      Deze pagina test oogbesturing met <strong>WebGazer.js</strong> voor het
-      Regenwormen spel. Zorg dat je webcam beschikbaar is en je gezicht goed zichtbaar is.
-    </p>
-    <p class="warn">
-      ⚠️ Houd je hoofd stil tijdens kalibratie.
-      Kijk naar elk geel punt en klik het aan.
-    </p>
-    <button class="start-btn" id="btn-splash-start">Start Eye Tracking</button>
-  </div>
+<div id="splash">
+  <h1>👁 Oogbesturing Test</h1>
+  <p>
+    Test WebGazer eye tracking voor Regenwormen.
+  </p>
+  <button class="start-btn" id="btn-splash-start">
+    Start Eye Tracking
+  </button>
+</div>
 
-  <!-- ─────────────────────────────────────────────────────────
-       LOADING OVERLAY
-  ──────────────────────────────────────────────────────────── -->
-  <div id="loading-overlay">
-    <div class="spinner"></div>
-    <p id="loading-text">WebGazer laden…</p>
-  </div>
+<div id="ui-overlay">
+  <div id="topbar">
+    <div>👁 Oogbesturing</div>
 
-  <!-- ─────────────────────────────────────────────────────────
-       TOPBALK MET STATUS EN KNOPPEN
-  ──────────────────────────────────────────────────────────── -->
-  <div id="ui-overlay">
-    <div id="topbar">
-      <h1>👁 Oogbesturing</h1>
-
-      <div id="status-row">
-        <span class="badge" id="badge-tracking">
-          <span class="dot"></span>
-          <span id="tracking-label">Inactief</span>
-        </span>
-        <span class="badge" id="badge-face">
-          <span class="dot"></span>
-          <span id="face-label">Geen gezicht</span>
-        </span>
-        <span class="badge" id="badge-coords">
-          X: <span id="coord-x">–</span> &nbsp; Y: <span id="coord-y">–</span>
-        </span>
-      </div>
-
-      <div id="btn-row">
-        <button class="btn" id="btn-start">▶ Start</button>
-        <button class="btn" id="btn-calibrate" disabled>✦ Kalibreer</button>
-        <button class="btn" id="btn-reset">↺ Reset</button>
-      </div>
-    </div>
-
-    <!-- Kalibratie voortgangsbalk -->
-    <div id="calibration-progress-bar">
-      <div id="calibration-progress-fill"></div>
-    </div>
-
-    <!-- Instructietekst -->
-    <div id="instruction-banner" id="instruction"></div>
-  </div>
-
-  <!-- ─────────────────────────────────────────────────────────
-       GAZE CURSOR  (volgt oogpositie realtime)
-  ──────────────────────────────────────────────────────────── -->
-  <div id="gaze-cursor" class="hidden"></div>
-
-  <!-- ─────────────────────────────────────────────────────────
-       KALIBRATIE KLIK-INDICATOR (pips onderaan)
-  ──────────────────────────────────────────────────────────── -->
-  <div id="cal-click-indicator"></div>
-
-  <!-- ─────────────────────────────────────────────────────────
-       GAME INTEGRATIE PANEEL (rechtsonder)
-       Toont live gaze data zoals je die in het spel gebruikt
-  ──────────────────────────────────────────────────────────── -->
-  <div id="game-panel">
-    <h3>🎮 Game Koppeling</h3>
-    <div class="gaze-val"><span>Gaze X</span>     <span id="gp-x">–</span></div>
-    <div class="gaze-val"><span>Gaze Y</span>     <span id="gp-y">–</span></div>
-    <div class="gaze-val"><span>Veld %X</span>    <span id="gp-pctx">–</span></div>
-    <div class="gaze-val"><span>Veld %Y</span>    <span id="gp-pcty">–</span></div>
-    <div class="gaze-val"><span>Status</span>     <span id="gp-status">wacht</span></div>
-  </div>
-
-  <!-- ─────────────────────────────────────────────────────────
-       KALIBRATIE COMPLEET OVERLAY
-  ──────────────────────────────────────────────────────────── -->
-  <div id="cal-complete">
-    <div class="cal-complete-box">
-      <h2>✅ Kalibratie Klaar!</h2>
-      <p>
-        Alle 9 punten zijn gekalibreerd. De oogtracking is nu
-        nauwkeuriger ingesteld op jouw ogen.
-      </p>
-      <button id="btn-cal-ok">Begin met tracking →</button>
+    <div>
+      <button class="btn" id="btn-start">Start</button>
+      <button class="btn" id="btn-calibrate">Kalibreer</button>
+      <button class="btn" id="btn-reset">Reset</button>
     </div>
   </div>
 
-  <!-- Toast container -->
-  <div id="toast-container"></div>
+  <!-- FIX: dubbele id verwijderd -->
+  <div id="instruction-banner"></div>
+</div>
 
+<div id="gaze-cursor"></div>
 
-  <!-- ═══════════════════════════════════════════════════════
-       JAVASCRIPT
-  ═══════════════════════════════════════════════════════════ -->
-  <script>
-  /**
-   * ═══════════════════════════════════════════════════════════
-   *  OOGBESTURING – WebGazer.js Implementatie
-   *  ─────────────────────────────────────────────────────────
-   *  Structuur:
-   *   1. Configuratie & constanten
-   *   2. State management
-   *   3. Smoothing / filtering
-   *   4. Kalibratie systeem
-   *   5. WebGazer initialisatie
-   *   6. Gaze cursor update
-   *   7. Gezicht detectie
-   *   8. UI helpers
-   *   9. Game integratie API   ← koppel dit aan Regenwormen
-   *  10. Event listeners
-   * ═══════════════════════════════════════════════════════════
-   */
+<div id="status">
+  X: <span id="coord-x">0</span><br>
+  Y: <span id="coord-y">0</span><br>
+  Face: <span id="face-status">nee</span>
+</div>
 
-  /* ── 1. CONFIGURATIE ─────────────────────────────────────── */
-  const CONFIG = {
-    /** EMA smoothing factor: 0 = instant (trilt), 1 = bevroren
-     *  0.75–0.85 werkt goed in de praktijk */
-    SMOOTHING_FACTOR: 0.80,
+<script>
+/* =========================================================
+   CONFIG
+========================================================= */
 
-    /** Aantal klikken per kalibratiepunt */
-    CLICKS_PER_DOT: 5,
+const CONFIG = {
+  SMOOTHING: 0.8,
+  CLICKS_PER_DOT: 5
+};
 
-    /** Milliseconden tussen cursor updates */
-    CURSOR_THROTTLE_MS: 16,   // ~60fps
+const state = {
+  tracking:false,
+  smoothX:window.innerWidth/2,
+  smoothY:window.innerHeight/2,
+  currentDot:0,
+  currentClicks:0
+};
 
-    /** Percentage marge van schermranden voor kalibratiepunten */
-    CAL_MARGIN_X: 0.08,
-    CAL_MARGIN_Y: 0.10,
+const gazeCursor = document.getElementById("gaze-cursor");
+
+let calibrationDots = [];
+
+/* =========================================================
+   SMOOTHING
+========================================================= */
+
+function smooth(rawX, rawY){
+  const a = CONFIG.SMOOTHING;
+
+  state.smoothX = a * state.smoothX + (1-a) * rawX;
+  state.smoothY = a * state.smoothY + (1-a) * rawY;
+
+  return {
+    x: state.smoothX,
+    y: state.smoothY
   };
+}
 
-  /* ── 2. APPLICATIE STATE ─────────────────────────────────── */
-  const state = {
-    isTracking:       false,   // WebGazer actief?
-    isCalibrating:    false,   // kalibratiemodus actief?
-    calibrationDone:  false,   // minimaal 1x gekalibreerd?
-    faceDetected:     false,   // gezicht zichtbaar?
-    currentDotIndex:  0,       // welke kalibratiepunt actief?
-    clicksOnCurrentDot: 0,     // klikken op huidig punt
-    smoothX: window.innerWidth  / 2,
-    smoothY: window.innerHeight / 2,
-    lastUpdate: 0,
-    rawGazeX: 0,
-    rawGazeY: 0,
-  };
+/* =========================================================
+   WEBGAZER START
+========================================================= */
 
-  /* ─────────────────────────────────────────────────────────
-   * PUBLIEKE GAZE DATA  –  gebruik dit in Regenwormen!
-   *
-   * window.EyeTracker.gaze    bevat altijd de laatste positie
-   * window.EyeTracker.onGaze  stel je callback in vanuit het spel
-   *
-   * Voorbeeld in Regenwormen:
-   *   window.EyeTracker.onGaze = function(gaze) {
-   *     const col = Math.floor(gaze.pctX * NUM_COLUMNS);
-   *     const row = Math.floor(gaze.pctY * NUM_ROWS);
-   *     highlightCell(col, row);
-   *   };
-   * ──────────────────────────────────────────────────────── */
+async function startTracking(){
+
+  try{
+
+    // FIX: TFFacemesh vervangen door clmtrackr
+    await webgazer
+      .setRegression('ridge')
+      .setTracker('clmtrackr')
+      .setGazeListener(onGaze)
+      .showPredictionPoints(false)
+      .begin();
+
+    state.tracking = true;
+
+    document.getElementById("instruction-banner").innerHTML =
+      "Tracking actief. Klik op Kalibreer.";
+
+    styleWebGazer();
+
+    console.log("Tracking gestart");
+
+  }catch(err){
+
+    console.error(err);
+    alert("Fout bij starten: " + err.message);
+
+  }
+}
+
+/* =========================================================
+   WEBGAZER STYLE FIX
+========================================================= */
+
+function styleWebGazer(){
+
+  const ids = [
+    "webgazerVideoFeed",
+    "webgazerVideoCanvas",
+    "webgazerFaceOverlay",
+    "webgazerFaceFeedbackBox"
+  ];
+
+  ids.forEach(id=>{
+
+    const el = document.getElementById(id);
+
+    if(el){
+
+      el.style.zIndex = "1";
+      el.style.position = "fixed";
+      el.style.bottom = "16px";
+      el.style.left = "16px";
+
+    }
+
+  });
+
+}
+
+/* =========================================================
+   GAZE CALLBACK
+========================================================= */
+
+function onGaze(data){
+
+  if(!data){
+
+    document.getElementById("face-status").textContent = "nee";
+    return;
+
+  }
+
+  document.getElementById("face-status").textContent = "ja";
+
+  const smoothed = smooth(data.x, data.y);
+
+  const x = Math.max(0, Math.min(window.innerWidth, smoothed.x));
+  const y = Math.max(0, Math.min(window.innerHeight, smoothed.y));
+
+  gazeCursor.style.left = x + "px";
+  gazeCursor.style.top = y + "px";
+
+  document.getElementById("coord-x").textContent = Math.round(x);
+  document.getElementById("coord-y").textContent = Math.round(y);
+
+  // HIER gebruik je later je spel controls
   window.EyeTracker = {
-    gaze: { x: 0, y: 0, pctX: 0, pctY: 0, active: false },
-    onGaze: null,   // ← zet hier jouw callback naartoe
+    x,
+    y,
+    pctX:x/window.innerWidth,
+    pctY:y/window.innerHeight
   };
 
-  /* ── 3. SMOOTHING  (Exponentieel Voortschrijdend Gemiddelde) ─
-   *
-   *  Formule:  smoothed = α * smoothed + (1 - α) * raw
-   *
-   *  α (SMOOTHING_FACTOR) bepaalt de tradeoff:
-   *   - Hoog α (0.9+) → zeer vloeiend maar langzaam
-   *   - Laag α (0.5)  → snel maar trilt meer
-   *  0.80 werkt goed voor accessibility gebruik
-   * ──────────────────────────────────────────────────────── */
-  function applySmoothing(rawX, rawY) {
-    const α = CONFIG.SMOOTHING_FACTOR;
-    state.smoothX = α * state.smoothX + (1 - α) * rawX;
-    state.smoothY = α * state.smoothY + (1 - α) * rawY;
-    return { x: state.smoothX, y: state.smoothY };
-  }
+}
 
-  /* ── 4. KALIBRATIE SYSTEEM ──────────────────────────────── */
+/* =========================================================
+   CALIBRATIE
+========================================================= */
 
-  /**
-   * Posities van de 9 kalibratiepunten (3×3 grid)
-   * Als percentage van het scherm (0–1).
-   * Marge zodat ze niet tegen de rand plakken.
-   */
-  function getCalibrationPositions() {
-    const mx = CONFIG.CAL_MARGIN_X;
-    const my = CONFIG.CAL_MARGIN_Y;
-    return [
-      [mx,     my    ], [0.5, my    ], [1-mx, my    ],
-      [mx,     0.5   ], [0.5, 0.5  ], [1-mx, 0.5   ],
-      [mx,     1-my  ], [0.5, 1-my  ], [1-mx, 1-my  ],
-    ];
-  }
+function calibrationPositions(){
 
-  let calDots = [];   // DOM elementen van kalibratiepunten
+  return [
+    [0.1,0.1],
+    [0.5,0.1],
+    [0.9,0.1],
 
-  /** Verwijder alle bestaande kalibratiepunten */
-  function removeCalibrationDots() {
-    calDots.forEach(d => d.remove());
-    calDots = [];
-  }
+    [0.1,0.5],
+    [0.5,0.5],
+    [0.9,0.5],
 
-  /** Maak 9 kalibratiepunten aan op het scherm */
-  function createCalibrationDots() {
-    removeCalibrationDots();
-    const positions = getCalibrationPositions();
-    positions.forEach((pos, i) => {
-      const dot = document.createElement('div');
-      dot.className = 'cal-dot todo';
-      dot.dataset.index = i;
-      dot.style.left = (pos[0] * window.innerWidth)  + 'px';
-      dot.style.top  = (pos[1] * window.innerHeight) + 'px';
-      dot.textContent = i + 1;
-      dot.addEventListener('click', () => onCalDotClick(i));
-      document.body.appendChild(dot);
-      calDots.push(dot);
-    });
-  }
+    [0.1,0.9],
+    [0.5,0.9],
+    [0.9,0.9]
+  ];
 
-  /** Start kalibratie sessie */
-  function startCalibration() {
-    if (!state.isTracking) {
-      showToast('Start eerst de tracking!', 'warn');
-      return;
+}
+
+function createCalibration(){
+
+  removeCalibration();
+
+  const positions = calibrationPositions();
+
+  positions.forEach((pos,index)=>{
+
+    const dot = document.createElement("div");
+
+    dot.className = "cal-dot";
+    dot.innerText = index+1;
+
+    dot.style.left = (pos[0]*window.innerWidth)+"px";
+    dot.style.top = (pos[1]*window.innerHeight)+"px";
+
+    dot.addEventListener("click", ()=>clickCalibration(index));
+
+    document.body.appendChild(dot);
+
+    calibrationDots.push(dot);
+
+  });
+
+  activateDot(0);
+
+}
+
+function activateDot(index){
+
+  calibrationDots.forEach((dot,i)=>{
+
+    dot.classList.remove("active");
+
+    if(i === index){
+      dot.classList.add("active");
     }
-    state.isCalibrating  = true;
-    state.currentDotIndex = 0;
-    state.clicksOnCurrentDot = 0;
-    createCalibrationDots();
-    activateDot(0);
-    setInstruction('Klik op het <b>gele punt</b> terwijl je ernaar kijkt — ' + CONFIG.CLICKS_PER_DOT + 'x per punt');
-    updateProgressBar(0);
-    buildClickPips();
-    document.getElementById('btn-calibrate').disabled = true;
-  }
 
-  /** Activeer een specifiek dot (highlight het) */
-  function activateDot(index) {
-    calDots.forEach((d, i) => {
-      d.classList.remove('active', 'todo');
-      d.classList.add(i < index ? 'done' : 'todo');
-    });
-    if (index < calDots.length) {
-      calDots[index].classList.remove('todo');
-      calDots[index].classList.add('active');
+  });
+
+  state.currentDot = index;
+  state.currentClicks = 0;
+
+}
+
+function clickCalibration(index){
+
+  if(index !== state.currentDot) return;
+
+  const positions = calibrationPositions();
+
+  const x = positions[index][0] * window.innerWidth;
+  const y = positions[index][1] * window.innerHeight;
+
+  webgazer.recordScreenPosition(x,y,'click');
+
+  state.currentClicks++;
+
+  if(state.currentClicks >= CONFIG.CLICKS_PER_DOT){
+
+    calibrationDots[index].classList.remove("active");
+    calibrationDots[index].classList.add("done");
+
+    if(index >= calibrationDots.length-1){
+
+      document.getElementById("instruction-banner").innerHTML =
+        "✅ Kalibratie klaar";
+
+    }else{
+
+      activateDot(index+1);
+
     }
-    state.currentDotIndex    = index;
-    state.clicksOnCurrentDot = 0;
-    updateClickPips(0);
+
   }
 
-  /** Verwerk klik op een kalibratiepunt */
-  function onCalDotClick(dotIndex) {
-    if (!state.isCalibrating) return;
-    if (dotIndex !== state.currentDotIndex) return;   // alleen actieve dot
+}
 
-    const dot = calDots[dotIndex];
-    const positions = getCalibrationPositions();
-    const x = positions[dotIndex][0] * window.innerWidth;
-    const y = positions[dotIndex][1] * window.innerHeight;
+function removeCalibration(){
 
-    // Registreer klik bij WebGazer als trainingsdata
-    webgazer.recordScreenPosition(x, y, 'click');
+  calibrationDots.forEach(dot=>dot.remove());
+  calibrationDots=[];
 
-    state.clicksOnCurrentDot++;
-    updateClickPips(state.clicksOnCurrentDot);
+}
 
-    // Kleine visuele feedback: even opflitsen
-    dot.style.background = 'rgba(255,255,255,0.4)';
-    setTimeout(() => dot.style.background = '', 150);
+/* =========================================================
+   RESET
+========================================================= */
 
-    if (state.clicksOnCurrentDot >= CONFIG.CLICKS_PER_DOT) {
-      dot.classList.remove('active');
-      dot.classList.add('done');
+function resetEverything(){
 
-      const progress = (dotIndex + 1) / calDots.length;
-      updateProgressBar(progress);
+  try{
+    webgazer.end();
+  }catch(e){}
 
-      if (dotIndex + 1 >= calDots.length) {
-        // Kalibratie klaar!
-        finishCalibration();
-      } else {
-        // Volgende dot
-        activateDot(dotIndex + 1);
-      }
-    }
-  }
+  removeCalibration();
 
-  /** Afronding kalibratie */
-  function finishCalibration() {
-    state.isCalibrating   = false;
-    state.calibrationDone = true;
-    updateProgressBar(1);
+  state.tracking = false;
 
-    setTimeout(() => {
-      // Dots verbergen na korte delay
-      calDots.forEach(d => d.classList.add('done'));
-      document.getElementById('cal-click-indicator').innerHTML = '';
-      document.getElementById('cal-complete').classList.add('active');
-      setInstruction('');
-      document.getElementById('btn-calibrate').disabled = false;
-    }, 600);
-  }
+  gazeCursor.style.left = "-100px";
+  gazeCursor.style.top = "-100px";
 
-  /** Klikindicator pips bouwen */
-  function buildClickPips() {
-    const container = document.getElementById('cal-click-indicator');
-    container.innerHTML = '';
-    for (let i = 0; i < CONFIG.CLICKS_PER_DOT; i++) {
-      const pip = document.createElement('div');
-      pip.className = 'click-pip';
-      container.appendChild(pip);
-    }
-  }
+  document.getElementById("instruction-banner").innerHTML =
+    "Gerest.";
 
-  /** Update gevulde pips */
-  function updateClickPips(count) {
-    const pips = document.querySelectorAll('.click-pip');
-    pips.forEach((p, i) => p.classList.toggle('filled', i < count));
-  }
+}
 
-  /** Update voortgangsbalk (0–1) */
-  function updateProgressBar(fraction) {
-    document.getElementById('calibration-progress-fill').style.width = (fraction * 100) + '%';
-  }
+/* =========================================================
+   EVENTS
+========================================================= */
 
-  /* ── 5. WEBGAZER INITIALISATIE ──────────────────────────── */
+document.getElementById("btn-splash-start")
+  .addEventListener("click", ()=>{
 
-  async function initWebGazer() {
-    showLoading('WebGazer laden…');
+    document.getElementById("splash").style.display = "none";
 
-    try {
-      /*
-       * WebGazer configuratie vóór begin():
-       * - showVideo(true)          → camera-feed tonen
-       * - showFaceOverlay(true)    → gezichtsdetectie overlay
-       * - showPredictionPoints     → eigen dots UIT (wij tekenen zelf)
-       * - applyKalmanFilter(true)  → WebGazer's ingebouwde filter
-       */
-      await webgazer
-        .setRegression('ridge')        // meest stabiele regressie
-        .setTracker('TFFacemesh')      // TensorFlow FaceMesh tracker
-        .setGazeListener(onGazeData)   // onze callback bij elke frame
-        .showVideo(true)
-        .showFaceOverlay(true)
-        .showFaceFeedbackBox(true)
-        .showPredictionPoints(false)   // eigen cursor gebruiken
-        .applyKalmanFilter(true)       // ingebouwde Kalman filter
-        .begin();
+    startTracking();
 
-      showLoading('Camera starten…');
+});
 
-      // Wacht tot video element aanwezig is en stijl aanpassen
-      await waitForWebGazerVideo();
+document.getElementById("btn-start")
+  .addEventListener("click", startTracking);
 
-      hideLoading();
-      state.isTracking = true;
-      updateTrackingBadge(true);
-      document.getElementById('btn-calibrate').disabled = false;
-      document.getElementById('gaze-cursor').classList.remove('hidden');
-      setInstruction('Tracking actief. Druk op <b>Kalibreer</b> voor betere nauwkeurigheid.');
-      showToast('Eye tracking gestart!', 'success');
+document.getElementById("btn-calibrate")
+  .addEventListener("click", createCalibration);
 
-    } catch (err) {
-      hideLoading();
-      console.error('WebGazer fout:', err);
-      showToast('Fout bij starten: ' + err.message, 'warn');
-      setInstruction('Fout bij starten. Controleer camera-toestemming.');
-    }
-  }
+document.getElementById("btn-reset")
+  .addEventListener("click", resetEverything);
 
-  /**
-   * Wacht op het WebGazer video element en pas de stijl aan.
-   * WebGazer injecteert #webgazerVideoFeed; we zorgen dat
-   * de z-index LAAG blijft zodat onze UI er bovenop staat.
-   */
-  function waitForWebGazerVideo() {
-    return new Promise(resolve => {
-      const check = () => {
-        const vid = document.getElementById('webgazerVideoFeed');
-        if (vid) {
-          styleWebGazerElements();
-          resolve();
-        } else {
-          setTimeout(check, 100);
-        }
-      };
-      check();
-    });
-  }
+window.addEventListener("resize", ()=>{
 
-  /**
-   * Forceer lage z-index op alle WebGazer elementen
-   * zodat onze kalibratiepunten en cursor ALTIJD zichtbaar zijn.
-   */
-  function styleWebGazerElements() {
-    const ids = [
-      'webgazerVideoFeed',
-      'webgazerVideoCanvas',
-      'webgazerFaceOverlay',
-      'webgazerFaceFeedbackBox',
-    ];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.style.zIndex  = '1';
-        el.style.position = 'fixed';
-        // Camera linksonder positioneren
-        el.style.bottom = '16px';
-        el.style.left   = '16px';
-        el.style.top    = '';
-        el.style.right  = '';
-        el.style.borderRadius = '10px';
-        el.style.opacity = '0.9';
-        el.style.border = '1px solid #1c3050';
-      }
+  if(calibrationDots.length){
+
+    const positions = calibrationPositions();
+
+    calibrationDots.forEach((dot,i)=>{
+
+      dot.style.left = (positions[i][0]*window.innerWidth)+"px";
+      dot.style.top = (positions[i][1]*window.innerHeight)+"px";
+
     });
 
-    // Herpositioneer ook de webgazer container als die bestaat
-    const container = document.getElementById('webgazerGazeDot');
-    if (container) container.style.zIndex = '1';
   }
 
-  /* ── 6. GAZE DATA CALLBACK ──────────────────────────────── */
+});
+</script>
 
-  /**
-   * Wordt aangeroepen door WebGazer bij elke voorspelling (~30–60fps)
-   * @param {Object|null} data  – {x, y} pixels | null als geen data
-   * @param {number}      elapsedMs
-   */
-  function onGazeData(data, elapsedMs) {
-    if (!data) {
-      // Geen data = gezicht buiten frame of geen voorspelling
-      setFaceDetected(false);
-      return;
-    }
-
-    setFaceDetected(true);
-    state.rawGazeX = data.x;
-    state.rawGazeY = data.y;
-
-    // Throttle updates voor performance
-    const now = performance.now();
-    if (now - state.lastUpdate < CONFIG.CURSOR_THROTTLE_MS) return;
-    state.lastUpdate = now;
-
-    // Smoothing toepassen
-    const smooth = applySmoothing(data.x, data.y);
-
-    // Klem binnen schermgrenzen
-    const x = Math.max(0, Math.min(window.innerWidth  - 1, smooth.x));
-    const y = Math.max(0, Math.min(window.innerHeight - 1, smooth.y));
-
-    // Gaze cursor verplaatsen
-    updateGazeCursor(x, y);
-
-    // Status UI bijwerken
-    updateCoords(Math.round(x), Math.round(y));
-
-    // Publieke API bijwerken voor game koppeling
-    const pctX = x / window.innerWidth;
-    const pctY = y / window.innerHeight;
-    updateGamePanel(x, y, pctX, pctY);
-    publishGazeData(x, y, pctX, pctY);
-  }
-
-  /* ── 7. GAZE CURSOR VISUEEL ─────────────────────────────── */
-
-  const gazeCursor = document.getElementById('gaze-cursor');
-
-  function updateGazeCursor(x, y) {
-    // CSS transform voor GPU-versnelde positie (sneller dan left/top)
-    gazeCursor.style.left = x + 'px';
-    gazeCursor.style.top  = y + 'px';
-  }
-
-  /* ── 8. GEZICHTSDETECTIE STATUS ─────────────────────────── */
-
-  let faceTimeout = null;
-
-  function setFaceDetected(detected) {
-    if (detected === state.faceDetected) return;
-    state.faceDetected = detected;
-
-    const badge = document.getElementById('badge-face');
-    const label = document.getElementById('face-label');
-
-    if (detected) {
-      badge.style.borderColor = 'var(--accent-green)';
-      badge.style.color = 'var(--accent-green)';
-      badge.querySelector('.dot').style.background = 'var(--accent-green)';
-      label.textContent = 'Gezicht gevonden';
-      gazeCursor.classList.remove('hidden');
-    } else {
-      badge.style.borderColor = 'var(--accent-red)';
-      badge.style.color = 'var(--accent-red)';
-      badge.querySelector('.dot').style.background = 'var(--accent-red)';
-      label.textContent = 'Geen gezicht';
-      gazeCursor.classList.add('hidden');
-    }
-  }
-
-  /* ── 9. GAME INTEGRATIE API ─────────────────────────────── */
-
-  /**
-   * Publiceert gaze data naar window.EyeTracker
-   * en roept de optionele onGaze callback aan.
-   *
-   * ═══════════════════════════════════════════════════════════
-   *  KOPPELING AAN REGENWORMEN  –  Zo gebruik je dit:
-   * ═══════════════════════════════════════════════════════════
-   *
-   *  Stap 1: Voeg dit script toe aan je spelpagina:
-   *    <script src="eyetracking.js"></script>
-   *    (of embed bovenstaande HTML inline)
-   *
-   *  Stap 2: Registreer een callback in je spel:
-   *
-   *    window.EyeTracker.onGaze = function(gaze) {
-   *      // gaze.x     = pixelpositie X op scherm
-   *      // gaze.y     = pixelpositie Y op scherm
-   *      // gaze.pctX  = 0.0–1.0 van links naar rechts
-   *      // gaze.pctY  = 0.0–1.0 van boven naar onder
-   *      // gaze.active = true als tracking actief is
-   *
-   *      // Voorbeeld: hover een cel in het speelbord
-   *      const gameEl = document.elementFromPoint(gaze.x, gaze.y);
-   *      if (gameEl && gameEl.classList.contains('game-cell')) {
-   *        gameEl.classList.add('gaze-hover');
-   *      }
-   *    };
-   *
-   *  Stap 3: Koppel je dwell-click systeem aan gaze.x / gaze.y:
-   *
-   *    // Jouw bestaande dwell logica:
-   *    function checkDwell(targetEl) {
-   *      const rect = targetEl.getBoundingClientRect();
-   *      const gaze = window.EyeTracker.gaze;
-   *      const inside = gaze.x >= rect.left && gaze.x <= rect.right
-   *                  && gaze.y >= rect.top  && gaze.y <= rect.bottom;
-   *      return inside;
-   *    }
-   * ═══════════════════════════════════════════════════════════
-   */
-  function publishGazeData(x, y, pctX, pctY) {
-    window.EyeTracker.gaze = { x, y, pctX, pctY, active: state.isTracking };
-
-    if (typeof window.EyeTracker.onGaze === 'function') {
-      try {
-        window.EyeTracker.onGaze(window.EyeTracker.gaze);
-      } catch (e) {
-        console.warn('EyeTracker.onGaze callback fout:', e);
-      }
-    }
-  }
-
-  /** Update het game integratie paneel */
-  function updateGamePanel(x, y, pctX, pctY) {
-    document.getElementById('gp-x').textContent     = Math.round(x);
-    document.getElementById('gp-y').textContent     = Math.round(y);
-    document.getElementById('gp-pctx').textContent  = (pctX * 100).toFixed(1) + '%';
-    document.getElementById('gp-pcty').textContent  = (pctY * 100).toFixed(1) + '%';
-    document.getElementById('gp-status').textContent = state.calibrationDone ? 'gekalibreerd' : 'ongekalibreerd';
-    document.getElementById('gp-status').style.color = state.calibrationDone
-      ? 'var(--accent-green)' : 'var(--accent-amber)';
-  }
-
-  /* ── 10. UI HELPERS ──────────────────────────────────────── */
-
-  function updateTrackingBadge(active) {
-    const badge = document.getElementById('badge-tracking');
-    const label = document.getElementById('tracking-label');
-    if (active) {
-      badge.style.borderColor = 'var(--accent-cyan)';
-      badge.style.color = 'var(--accent-cyan)';
-      label.textContent = 'Tracking actief';
-    } else {
-      badge.style.borderColor = 'var(--text-muted)';
-      badge.style.color = 'var(--text-muted)';
-      label.textContent = 'Inactief';
-    }
-  }
-
-  function updateCoords(x, y) {
-    document.getElementById('coord-x').textContent = x;
-    document.getElementById('coord-y').textContent = y;
-  }
-
-  function setInstruction(html) {
-    document.getElementById('instruction-banner').innerHTML = html;
-  }
-
-  function showToast(msg, type = 'info') {
-    const el = document.createElement('div');
-    el.className = 'toast ' + type;
-    el.textContent = msg;
-    document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
-
-  function showLoading(msg) {
-    document.getElementById('loading-text').textContent = msg;
-    document.getElementById('loading-overlay').classList.add('active');
-  }
-
-  function hideLoading() {
-    document.getElementById('loading-overlay').classList.remove('active');
-  }
-
-  /** Reset alles – WebGazer stoppen en herstarten */
-  async function resetAll() {
-    try {
-      if (webgazer) webgazer.end();
-    } catch (e) {}
-
-    state.isTracking      = false;
-    state.isCalibrating   = false;
-    state.calibrationDone = false;
-    state.faceDetected    = false;
-    state.smoothX = window.innerWidth  / 2;
-    state.smoothY = window.innerHeight / 2;
-
-    removeCalibrationDots();
-    document.getElementById('cal-click-indicator').innerHTML = '';
-    document.getElementById('cal-complete').classList.remove('active');
-    document.getElementById('calibration-progress-fill').style.width = '0%';
-    gazeCursor.classList.add('hidden');
-    updateTrackingBadge(false);
-    setFaceDetected(false);
-    setInstruction('');
-    document.getElementById('btn-calibrate').disabled = true;
-    document.getElementById('gp-status').textContent = 'gereset';
-
-    // Herlaad WebGazer lokale opslag (wist kalibratie)
-    localStorage.clear();
-
-    showToast('Gereset. Druk op Start om opnieuw te beginnen.', 'info');
-  }
-
-  /* ─── SCHERMGROOTTE VERANDERING ─────────────────────────── */
-
-  window.addEventListener('resize', () => {
-    // Herpositioneer kalibratiepunten als scherm verandert
-    if (state.isCalibrating && calDots.length) {
-      const positions = getCalibrationPositions();
-      calDots.forEach((dot, i) => {
-        dot.style.left = (positions[i][0] * window.innerWidth)  + 'px';
-        dot.style.top  = (positions[i][1] * window.innerHeight) + 'px';
-      });
-    }
-    // Herpositioneer WebGazer video elementen
-    styleWebGazerElements();
-  });
-
-  /* ── 11. EVENT LISTENERS ─────────────────────────────────── */
-
-  // Splash: start-knop
-  document.getElementById('btn-splash-start').addEventListener('click', () => {
-    document.getElementById('splash').style.display = 'none';
-    initWebGazer();
-  });
-
-  // Topbar: start
-  document.getElementById('btn-start').addEventListener('click', () => {
-    if (!state.isTracking) initWebGazer();
-    else showToast('Tracking is al actief.', 'info');
-  });
-
-  // Topbar: kalibreer
-  document.getElementById('btn-calibrate').addEventListener('click', () => {
-    if (state.isCalibrating) {
-      showToast('Kalibratie is al bezig.', 'warn');
-      return;
-    }
-    startCalibration();
-  });
-
-  // Topbar: reset
-  document.getElementById('btn-reset').addEventListener('click', resetAll);
-
-  // Kalibratie klaar: OK-knop
-  document.getElementById('btn-cal-ok').addEventListener('click', () => {
-    document.getElementById('cal-complete').classList.remove('active');
-    removeCalibrationDots();
-    document.getElementById('cal-click-indicator').innerHTML = '';
-    setInstruction('Kalibratie klaar — tracking loopt. Druk nog een keer op Kalibreer om bij te stellen.');
-    showToast('Kalibratie succesvol!', 'success');
-  });
-
-  // Periodiek WebGazer video-elementen herstijlen
-  // (WebGazer kan ze soms resetten na interne updates)
-  setInterval(() => {
-    if (state.isTracking) styleWebGazerElements();
-  }, 2000);
-
-  </script>
 </body>
 </html>

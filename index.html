@@ -6,10 +6,12 @@
 
 <title>MediaPipe Eye Tracking Test</title>
 
+<!-- MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <style>
+
 *{
   margin:0;
   padding:0;
@@ -23,6 +25,7 @@ body{
   color:white;
 }
 
+/* Camera */
 video{
   position:fixed;
   left:20px;
@@ -33,6 +36,7 @@ video{
   z-index:1;
 }
 
+/* Canvas */
 canvas{
   position:fixed;
   inset:0;
@@ -42,6 +46,7 @@ canvas{
   pointer-events:none;
 }
 
+/* Cursor */
 #gazeCursor{
   position:fixed;
   width:34px;
@@ -58,22 +63,33 @@ canvas{
   transform:translate(-50%,-50%);
 }
 
+/* Topbar */
 #topbar{
   position:fixed;
   top:0;
   left:0;
   right:0;
+
   display:flex;
   justify-content:space-between;
   align-items:center;
+
   padding:14px 20px;
+
   background:rgba(0,0,0,0.7);
+
   z-index:50;
 }
 
-#title{font-size:22px;font-weight:bold;}
+#title{
+  font-size:22px;
+  font-weight:bold;
+}
 
-#buttons{display:flex;gap:10px;}
+#buttons{
+  display:flex;
+  gap:10px;
+}
 
 button{
   border:none;
@@ -84,43 +100,67 @@ button{
   cursor:pointer;
 }
 
-#startBtn{background:#00e5ff;}
-#calibrateBtn{background:#ffb300;}
-#resetBtn{background:#ff3d3d;color:white;}
+#startBtn{
+  background:#00e5ff;
+}
 
+#calibrateBtn{
+  background:#ffb300;
+}
+
+#resetBtn{
+  background:#ff3d3d;
+  color:white;
+}
+
+/* Status */
 #status{
   position:fixed;
   right:20px;
   bottom:20px;
+
   background:rgba(0,0,0,0.7);
   border-radius:14px;
+
   padding:14px;
+
   z-index:50;
+
   font-family:monospace;
   line-height:1.6;
 }
 
+/* Calibration dots */
 .calDot{
   position:fixed;
   width:44px;
   height:44px;
   border-radius:50%;
+
   background:#222;
   border:3px solid #555;
+
   display:flex;
   justify-content:center;
   align-items:center;
+
   color:white;
   font-weight:bold;
+
   z-index:200;
+
   transform:translate(-50%,-50%);
+
   cursor:pointer;
 }
 
 .calDot.active{
   border-color:#ffb300;
   background:rgba(255,179,0,0.25);
-  box-shadow:0 0 20px rgba(255,179,0,0.8);
+
+  box-shadow:
+    0 0 20px rgba(255,179,0,0.8),
+    0 0 40px rgba(255,179,0,0.4);
 }
 
 .calDot.done{
@@ -133,14 +173,17 @@ button{
   top:70px;
   left:50%;
   transform:translateX(-50%);
+
   background:rgba(0,0,0,0.8);
+
   padding:12px 20px;
   border-radius:12px;
+
   z-index:150;
 }
+
 </style>
 </head>
-
 <body>
 
 <div id="topbar">
@@ -153,7 +196,9 @@ button{
   </div>
 </div>
 
-<div id="message">Klik op Start om tracking te beginnen</div>
+<div id="message">
+  Klik op Start om tracking te beginnen
+</div>
 
 <div id="status">
   X: <span id="xPos">0</span><br>
@@ -163,9 +208,14 @@ button{
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
+
 <div id="gazeCursor"></div>
 
 <script>
+
+/* =====================================================
+   ELEMENTEN
+===================================================== */
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
@@ -178,10 +228,17 @@ const yPos = document.getElementById("yPos");
 const faceStatus = document.getElementById("faceStatus");
 const message = document.getElementById("message");
 
+/* =====================================================
+   SCREEN
+===================================================== */
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// smoothing
+/* =====================================================
+   SMOOTHING
+===================================================== */
+
 let smoothX = window.innerWidth / 2;
 let smoothY = window.innerHeight / 2;
 
@@ -196,9 +253,13 @@ function smoothMove(targetX,targetY){
     x:smoothX,
     y:smoothY
   };
+
 }
 
-// FaceMesh
+/* =====================================================
+   MEDIAPIPE
+===================================================== */
+
 const faceMesh = new FaceMesh({
   locateFile: (file) => {
     return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -212,14 +273,17 @@ faceMesh.setOptions({
   minTrackingConfidence:0.5
 });
 
-// ===============================
-// 🔥 FIX: EYE GAZE (HIER IS HET PROBLEEM OPGELOST)
-// ===============================
+/* =====================================================
+   RESULTATEN
+===================================================== */
+
 faceMesh.onResults(results => {
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if(!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0){
+  if(!results.multiFaceLandmarks ||
+     results.multiFaceLandmarks.length === 0){
+
     faceStatus.textContent = "nee";
     return;
   }
@@ -228,64 +292,59 @@ faceMesh.onResults(results => {
 
   const face = results.multiFaceLandmarks[0];
 
-  // 👁 iris
+  // Linker iris
   const leftIris = face[468];
+
+  // Rechter iris
   const rightIris = face[473];
 
-  // 👁 ooghoeken
-  const leftOuter = face[33];
-  const leftInner = face[133];
+  // Gemiddelde positie
+  const eyeX = (leftIris.x + rightIris.x) / 2;
+  const eyeY = (leftIris.y + rightIris.y) / 2;
 
-  const rightInner = face[362];
-  const rightOuter = face[263];
-
-  // 🔥 echte gaze (RELATIEF BINNEN HET OOG)
-  const leftRatio =
-    (leftIris.x - leftOuter.x) / (leftInner.x - leftOuter.x);
-
-  const rightRatio =
-    (rightIris.x - rightInner.x) / (rightOuter.x - rightInner.x);
-
-  const eyeX = (leftRatio + (1 - rightRatio)) / 2;
-
-  // vertical gaze
-  const top = face[159];
-  const bottom = face[145];
-
-  const eyeY =
-    ((leftIris.y + rightIris.y) / 2 - top.y) /
-    (bottom.y - top.y);
-
-  // screen mapping
+  // Omzetten naar scherm
   let screenX = (1 - eyeX) * window.innerWidth;
   let screenY = eyeY * window.innerHeight;
 
-  // clamp
+  // Extra gevoeligheid
+  screenX = (screenX - window.innerWidth/2) * 2 + window.innerWidth/2;
+  screenY = (screenY - window.innerHeight/2) * 2 + window.innerHeight/2;
+
+  // Clamp
   screenX = Math.max(0,Math.min(window.innerWidth,screenX));
   screenY = Math.max(0,Math.min(window.innerHeight,screenY));
 
+  // Smooth
   const smooth = smoothMove(screenX,screenY);
 
+  // Cursor
   cursor.style.left = smooth.x + "px";
   cursor.style.top = smooth.y + "px";
 
+  // Status
   xPos.textContent = Math.round(smooth.x);
   yPos.textContent = Math.round(smooth.y);
 
+  // GAME API
   window.EyeTracker = {
     x:smooth.x,
     y:smooth.y,
     pctX:smooth.x / window.innerWidth,
     pctY:smooth.y / window.innerHeight
   };
+
 });
 
-// camera
+/* =====================================================
+   CAMERA
+===================================================== */
+
 let camera = null;
 
 async function startTracking(){
 
-  message.innerHTML = "Tracking gestart. Kijk rond.";
+  message.innerHTML =
+    "Tracking gestart. Kijk rond.";
 
   camera = new Camera(video, {
     onFrame: async () => {
@@ -296,12 +355,158 @@ async function startTracking(){
   });
 
   camera.start();
+
 }
+
+/* =====================================================
+   CALIBRATIE
+===================================================== */
+
+let dots = [];
+let currentDot = 0;
+let currentClicks = 0;
+
+function calibrationPositions(){
+
+  return [
+    [0.1,0.1],
+    [0.5,0.1],
+    [0.9,0.1],
+
+    [0.1,0.5],
+    [0.5,0.5],
+    [0.9,0.5],
+
+    [0.1,0.9],
+    [0.5,0.9],
+    [0.9,0.9]
+  ];
+
+}
+
+function startCalibration(){
+
+  removeDots();
+
+  currentDot = 0;
+  currentClicks = 0;
+
+  message.innerHTML =
+    "Klik op de gele stip terwijl je ernaar kijkt";
+
+  const positions = calibrationPositions();
+
+  positions.forEach((p,index)=>{
+
+    const dot = document.createElement("div");
+
+    dot.className = "calDot";
+    dot.innerHTML = index+1;
+
+    dot.style.left = (p[0] * window.innerWidth) + "px";
+    dot.style.top = (p[1] * window.innerHeight) + "px";
+
+    dot.addEventListener("click",()=>clickDot(index));
+
+    document.body.appendChild(dot);
+
+    dots.push(dot);
+
+  });
+
+  activateDot(0);
+
+}
+
+function activateDot(index){
+
+  dots.forEach((dot,i)=>{
+
+    dot.classList.remove("active");
+
+    if(i === index){
+      dot.classList.add("active");
+    }
+
+  });
+
+}
+
+function clickDot(index){
+
+  if(index !== currentDot) return;
+
+  currentClicks++;
+
+  if(currentClicks >= 5){
+
+    dots[index].classList.remove("active");
+    dots[index].classList.add("done");
+
+    currentDot++;
+    currentClicks = 0;
+
+    if(currentDot >= dots.length){
+
+      message.innerHTML =
+        "✅ Kalibratie voltooid";
+
+      return;
+
+    }
+
+    activateDot(currentDot);
+
+  }
+
+}
+
+function removeDots(){
+
+  dots.forEach(dot=>dot.remove());
+  dots = [];
+
+}
+
+/* =====================================================
+   RESET
+===================================================== */
+
+function resetTracking(){
+
+  removeDots();
+
+  message.innerHTML =
+    "Tracking gereset";
+
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
 
 document.getElementById("startBtn")
   .addEventListener("click",startTracking);
+
+document.getElementById("calibrateBtn")
+  .addEventListener("click",startCalibration);
+
+document.getElementById("resetBtn")
+  .addEventListener("click",resetTracking);
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+window.addEventListener("resize",()=>{
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+});
 
 </script>
 
 </body>
 </html>
+ 

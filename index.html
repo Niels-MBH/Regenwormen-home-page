@@ -307,10 +307,13 @@ function norm(iris, outer, inner){
   return (iris.x - outer.x) / (inner.x - outer.x);
 }
 
-const leftX = norm(leftIris, leftOuter, leftInner);
-const rightX = norm(rightIris, rightOuter, rightInner);
+const leftX = 1 - norm(leftIris, leftOuter, leftInner);
+const rightX = 1 - norm(rightIris, rightOuter, rightInner);
 
-const eyeX = (leftX + rightX) / 2;
+  let eyeX = (leftX + rightX) / 2;
+
+// extra gevoeligheid (maakt beweging groter)
+eyeX = (eyeX - 0.5) * 2 + 0.5;
 const eyeY = (leftIris.y + rightIris.y) / 2; // Y laten we simpel
 
   // Omzetten naar scherm

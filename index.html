@@ -314,7 +314,16 @@ const rightX = 1 - norm(rightIris, rightOuter, rightInner);
 
 // extra gevoeligheid (maakt beweging groter)
 eyeX = (eyeX - 0.5) * 2 + 0.5;
-const eyeY = (leftIris.y + rightIris.y) / 2; // Y laten we simpel
+let eyeY = (leftIris.y + rightIris.y) / 2;
+
+// ooghoogte normaliseren (zelfde idee als X)
+const leftY = (leftIris.y - leftOuter.y) / (leftInner.y - leftOuter.y);
+const rightY = (rightIris.y - rightOuter.y) / (rightInner.y - rightOuter.y);
+
+eyeY = (leftY + rightY) / 2;
+
+// gevoeligheid verhogen
+eyeY = (eyeY - 0.5) * 2 + 0.5;
 
   // Omzetten naar scherm
 let screenX = eyeX * window.innerWidth;

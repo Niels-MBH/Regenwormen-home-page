@@ -295,7 +295,8 @@ faceMesh.onResults(results => {
 
   faceStatus.textContent = "ja";
 
-  const face = results.multiFaceLandmarks[0];
+ if (!results.multiFaceLandmarks?.length) return;
+const face = results.multiFaceLandmarks[0];
 
 const leftIris = face[468];
 const rightIris = face[473];
@@ -334,36 +335,39 @@ eyeY = (leftY + rightY) / 2;
 // gevoeligheid verhogen
 eyeY = (eyeY - 0.5) * 2 + 0.5;
 
-  // Omzetten naar scherm
-let screenX = eyeX * window.innerWidth;
-eyeY = 1 - eyeY;
-eyeY = (eyeY - 0.5) * 1.6 + 0.5;
-let screenY = eyeY * window.innerHeight;
+  
+// smoothing input
+const smooth = smoothMove(
+  eyeX * window.innerWidth,
+  eyeY * window.innerHeight
+);
 
-  // Extra gevoeligheid
-  screenX = (screenX - window.innerWidth/2) * 2 + window.innerWidth/2;
-  screenY = (screenY - window.innerHeight/2) * 2 + window.innerHeight/2;
-
-  // Clamp
-  screenX = Math.max(0,Math.min(window.innerWidth,screenX));
-  screenY = Math.max(0,Math.min(window.innerHeight,screenY));
-
-  // Smooth
 let screenX = smooth.x;
 let screenY = smooth.y;
 
+// calibration correction (NU WERKT HET ECHT)
 if (calibrationData.length === 9 && !isCalibrating) {
 
-  let sumX = 0;
-  let sumY = 0;
+  let avgEyeX = 0;
+  let avgEyeY = 0;
+  let avgScreenX = 0;
+  let avgScreenY = 0;
 
   for (let i = 0; i < calibrationData.length; i++) {
-    sumX += calibrationData[i].screenX * window.innerWidth;
-    sumY += calibrationData[i].screenY * window.innerHeight;
+    avgEyeX += calibrationData[i].eyeX;
+    avgEyeY += calibrationData[i].eyeY;
+    avgScreenX += calibrationData[i].screenX;
+    avgScreenY += calibrationData[i].screenY;
   }
 
-  screenX = sumX / calibrationData.length;
-  screenY = sumY / calibrationData.length;
+  avgEyeX /= 9;
+  avgEyeY /= 9;
+  avgScreenX /= 9;
+  avgScreenY /= 9;
+
+  // simpele offset correctie
+  screenX = (smooth.x - avgEyeX * window.innerWidth) + avgScreenX * window.innerWidth;
+  screenY = (smooth.y - avgEyeY * window.innerHeight) + avgScreenY * window.innerHeight;
 }
 
 cursor.style.left = screenX + "px";
@@ -374,19 +378,19 @@ cursor.style.top = screenY + "px";
   yPos.textContent = Math.round(smooth.y);
 
   // GAME API
-  window.EyeTracker = {
-    x:smooth.x,
-    y:smooth.y,
-    pctX:smooth.x / window.innerWidth,
-    pctY:smooth.y / window.innerHeight
-  };
+window.EyeTracker = {
+  x: smooth.x / window.innerWidth,
+  y: smooth.y / window.innerHeight,
+  pctX: smooth.x / window.innerWidth,
+  pctY: smooth.y / window.innerHeight
+};
 
 });
 
 /* =====================================================
    CAMERA
 ===================================================== */
-
+const Camera = window.Camera;
 let camera = null;
 
 async function startTracking(){
@@ -410,10 +414,29 @@ async function startTracking(){
    CALIBRATIE
 ===================================================== */
 
+let calibrationData = [];
+let isCalibrating = false;
 let dots = [];
 let currentDot = 0;
-let currentClicks = 0;
 
+/* 9 punten */
+function calibrationPositions(){
+  return [
+    [0.1,0.1],
+    [0.5,0.1],
+    [0.9,0.1],
+
+    [0.1,0.5],
+    [0.5,0.5],
+    [0.9,0.5],
+
+    [0.1,0.9],
+    [0.5,0.9],
+    [0.9,0.9]
+  ];
+}
+
+/* START CALIBRATIE */
 function startCalibration(){
 
   calibrationData = [];
@@ -423,7 +446,7 @@ function startCalibration(){
   removeDots();
 
   message.innerHTML =
-    "Klik op de stip terwijl je ernaar kijkt";
+    "Klik op elke stip terwijl je ernaar kijkt";
 
   const positions = calibrationPositions();
 
@@ -438,10 +461,10 @@ function startCalibration(){
 
     dot.addEventListener("click", () => {
 
-      // 👉 HIER LEER JE JE OGEN
+      // LEARN EYE POSITION
       calibrationData.push({
-        eyeX: eyeX,
-        eyeY: eyeY,
+        eyeX: window.EyeTracker ? window.EyeTracker.x : 0,
+        eyeY: window.EyeTracker ? window.EyeTracker.y : 0,
         screenX: p[0],
         screenY: p[1]
       });
@@ -450,118 +473,22 @@ function startCalibration(){
 
       currentDot++;
 
-      if (currentDot === positions.length) {
+      if (currentDot >= positions.length) {
         isCalibrating = false;
-        message.innerHTML = "Kalibratie klaar";
+        message.innerHTML = "✅ Kalibratie klaar";
       }
 
     });
 
     document.body.appendChild(dot);
     dots.push(dot);
-
   });
-
 }
 
-  return [
-    [0.1,0.1],
-    [0.5,0.1],
-    [0.9,0.1],
-
-    [0.1,0.5],
-    [0.5,0.5],
-    [0.9,0.5],
-
-    [0.1,0.9],
-    [0.5,0.9],
-    [0.9,0.9]
-  ];
-
-}
-
-function startCalibration(){
-
-  removeDots();
-
-  currentDot = 0;
-  currentClicks = 0;
-
-  message.innerHTML =
-    "Klik op de gele stip terwijl je ernaar kijkt";
-
-  const positions = calibrationPositions();
-
-  positions.forEach((p,index)=>{
-
-    const dot = document.createElement("div");
-
-    dot.className = "calDot";
-    dot.innerHTML = index+1;
-
-    dot.style.left = (p[0] * window.innerWidth) + "px";
-    dot.style.top = (p[1] * window.innerHeight) + "px";
-
-    dot.addEventListener("click",()=>clickDot(index));
-
-    document.body.appendChild(dot);
-
-    dots.push(dot);
-
-  });
-
-  activateDot(0);
-
-}
-
-function activateDot(index){
-
-  dots.forEach((dot,i)=>{
-
-    dot.classList.remove("active");
-
-    if(i === index){
-      dot.classList.add("active");
-    }
-
-  });
-
-}
-
-function clickDot(index){
-
-  if(index !== currentDot) return;
-
-  currentClicks++;
-
-  if(currentClicks >= 5){
-
-    dots[index].classList.remove("active");
-    dots[index].classList.add("done");
-
-    currentDot++;
-    currentClicks = 0;
-
-    if(currentDot >= dots.length){
-
-      message.innerHTML =
-        "✅ Kalibratie voltooid";
-
-      return;
-
-    }
-
-    activateDot(currentDot);
-
-  }
-
-}
-
+/* DOT CLEANUP */
 function removeDots(){
-
-  dots.forEach(dot=>dot.remove());
+  dots.forEach(d => d.remove());
   dots = [];
-
 }
 
 /* =====================================================

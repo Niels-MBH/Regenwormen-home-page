@@ -242,6 +242,11 @@ canvas.height = window.innerHeight;
 let smoothX = window.innerWidth / 2;
 let smoothY = window.innerHeight / 2;
 
+let calibrationData = [];
+let isCalibrating = false;
+let dots = [];
+let currentDot = 0;
+
 function smoothMove(targetX,targetY){
 
   const factor = 0.82;
@@ -312,9 +317,13 @@ const rightX = 1 - norm(rightIris, rightOuter, rightInner);
 
   let eyeX = (leftX + rightX) / 2;
 
-// extra gevoeligheid (maakt beweging groter)
+// extra gevoeligheid X
 eyeX = (eyeX - 0.5) * 2 + 0.5;
+
+// Y fix (belangrijk: omdraaien + stabieler maken)
 let eyeY = (leftIris.y + rightIris.y) / 2;
+eyeY = 1 - eyeY;
+eyeY = (eyeY - 0.5) * 1.4 + 0.5;
 
 // ooghoogte normaliseren (zelfde idee als X)
 const leftY = (leftIris.y - leftOuter.y) / (leftInner.y - leftOuter.y);
@@ -340,11 +349,25 @@ let screenY = eyeY * window.innerHeight;
   screenY = Math.max(0,Math.min(window.innerHeight,screenY));
 
   // Smooth
-  const smooth = smoothMove(screenX,screenY);
+let screenX = smooth.x;
+let screenY = smooth.y;
 
-  // Cursor
-  cursor.style.left = smooth.x + "px";
-  cursor.style.top = smooth.y + "px";
+if (calibrationData.length === 9 && !isCalibrating) {
+
+  let sumX = 0;
+  let sumY = 0;
+
+  for (let i = 0; i < calibrationData.length; i++) {
+    sumX += calibrationData[i].screenX * window.innerWidth;
+    sumY += calibrationData[i].screenY * window.innerHeight;
+  }
+
+  screenX = sumX / calibrationData.length;
+  screenY = sumY / calibrationData.length;
+}
+
+cursor.style.left = screenX + "px";
+cursor.style.top = screenY + "px";
 
   // Status
   xPos.textContent = Math.round(smooth.x);
@@ -391,7 +414,55 @@ let dots = [];
 let currentDot = 0;
 let currentClicks = 0;
 
-function calibrationPositions(){
+function startCalibration(){
+
+  calibrationData = [];
+  isCalibrating = true;
+  currentDot = 0;
+
+  removeDots();
+
+  message.innerHTML =
+    "Klik op de stip terwijl je ernaar kijkt";
+
+  const positions = calibrationPositions();
+
+  positions.forEach((p, index) => {
+
+    const dot = document.createElement("div");
+    dot.className = "calDot";
+    dot.innerHTML = index + 1;
+
+    dot.style.left = (p[0] * window.innerWidth) + "px";
+    dot.style.top = (p[1] * window.innerHeight) + "px";
+
+    dot.addEventListener("click", () => {
+
+      // 👉 HIER LEER JE JE OGEN
+      calibrationData.push({
+        eyeX: eyeX,
+        eyeY: eyeY,
+        screenX: p[0],
+        screenY: p[1]
+      });
+
+      dot.classList.add("done");
+
+      currentDot++;
+
+      if (currentDot === positions.length) {
+        isCalibrating = false;
+        message.innerHTML = "Kalibratie klaar";
+      }
+
+    });
+
+    document.body.appendChild(dot);
+    dots.push(dot);
+
+  });
+
+}
 
   return [
     [0.1,0.1],

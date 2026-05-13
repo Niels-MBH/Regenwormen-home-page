@@ -1,206 +1,3 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oogbesturing – WebGazer Test</title>
-
-  <!-- WebGazer -->
-  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
-
-  <!-- FIX: controleren of WebGazer geladen is -->
-  <script>
-    window.addEventListener('load', () => {
-      if (typeof webgazer === "undefined") {
-        alert("WebGazer is niet geladen.");
-      } else {
-        console.log("WebGazer succesvol geladen.");
-      }
-    });
-  </script>
-
-  <style>
-    body{
-      margin:0;
-      background:#080c14;
-      color:white;
-      font-family:Arial,sans-serif;
-      overflow:hidden;
-    }
-
-    #webgazerVideoFeed,
-    #webgazerVideoCanvas,
-    #webgazerFaceOverlay,
-    #webgazerFaceFeedbackBox{
-      z-index:1 !important;
-      position:fixed !important;
-      bottom:16px !important;
-      left:16px !important;
-      border-radius:10px !important;
-      border:1px solid #1c3050 !important;
-    }
-
-    #ui-overlay{
-      position:fixed;
-      inset:0;
-      z-index:10;
-      pointer-events:none;
-    }
-
-    #topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:12px;
-      background:rgba(0,0,0,0.8);
-      pointer-events:all;
-    }
-
-    .btn{
-      padding:10px 18px;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:bold;
-      margin-left:8px;
-    }
-
-    #btn-start{
-      background:#00e5ff;
-      color:black;
-    }
-
-    #btn-calibrate{
-      background:#ffaa00;
-      color:black;
-    }
-
-    #btn-reset{
-      background:#ff3b3b;
-      color:white;
-    }
-
-    #instruction-banner{
-      text-align:center;
-      padding:10px;
-      color:#ffaa00;
-      font-weight:bold;
-    }
-
-    #gaze-cursor{
-      position:fixed;
-      width:30px;
-      height:30px;
-      border-radius:50%;
-      border:3px solid #00e5ff;
-      background:rgba(0,229,255,0.2);
-      pointer-events:none;
-      z-index:20;
-      transform:translate(-50%,-50%);
-      left:-100px;
-      top:-100px;
-    }
-
-    .cal-dot{
-      position:fixed;
-      width:42px;
-      height:42px;
-      border-radius:50%;
-      background:#222;
-      border:3px solid #555;
-      z-index:30;
-      transform:translate(-50%,-50%);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      color:white;
-      cursor:pointer;
-      font-weight:bold;
-    }
-
-    .cal-dot.active{
-      background:rgba(255,170,0,0.2);
-      border-color:#ffaa00;
-      box-shadow:0 0 20px rgba(255,170,0,0.8);
-    }
-
-    .cal-dot.done{
-      background:rgba(57,255,20,0.2);
-      border-color:#39ff14;
-    }
-
-    #splash{
-      position:fixed;
-      inset:0;
-      z-index:99;
-      background:#080c14;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      gap:20px;
-      text-align:center;
-      padding:20px;
-    }
-
-    .start-btn{
-      padding:16px 32px;
-      font-size:20px;
-      border:none;
-      border-radius:12px;
-      background:#00e5ff;
-      color:black;
-      font-weight:bold;
-      cursor:pointer;
-    }
-
-    #status{
-      position:fixed;
-      right:20px;
-      bottom:20px;
-      z-index:15;
-      background:rgba(0,0,0,0.7);
-      padding:12px;
-      border-radius:10px;
-      font-family:monospace;
-    }
-  </style>
-</head>
-<body>
-
-<div id="splash">
-  <h1>👁 Oogbesturing Test</h1>
-  <p>
-    Test WebGazer eye tracking voor Regenwormen.
-  </p>
-  <button class="start-btn" id="btn-splash-start">
-    Start Eye Tracking
-  </button>
-</div>
-
-<div id="ui-overlay">
-  <div id="topbar">
-    <div>👁 Oogbesturing</div>
-
-    <div>
-      <button class="btn" id="btn-start">Start</button>
-      <button class="btn" id="btn-calibrate">Kalibreer</button>
-      <button class="btn" id="btn-reset">Reset</button>
-    </div>
-  </div>
-
-  <!-- FIX: dubbele id verwijderd -->
-  <div id="instruction-banner"></div>
-</div>
-
-<div id="gaze-cursor"></div>
-
-<div id="status">
-  X: <span id="coord-x">0</span><br>
-  Y: <span id="coord-y">0</span><br>
-  Face: <span id="face-status">nee</span>
-</div>
-
 <script>
 /* =========================================================
    CONFIG
@@ -228,6 +25,7 @@ let calibrationDots = [];
 ========================================================= */
 
 function smooth(rawX, rawY){
+
   const a = CONFIG.SMOOTHING;
 
   state.smoothX = a * state.smoothX + (1-a) * rawX;
@@ -237,6 +35,7 @@ function smooth(rawX, rawY){
     x: state.smoothX,
     y: state.smoothY
   };
+
 }
 
 /* =========================================================
@@ -247,10 +46,11 @@ async function startTracking(){
 
   try{
 
-    // FIX: TFFacemesh vervangen door clmtrackr
+    // FIX:
+    // setTracker en setRegression verwijderd
+    // omdat jouw WebGazer build daar fouten op geeft
+
     await webgazer
-      .setRegression('ridge')
-      .setTracker('clmtrackr')
       .setGazeListener(onGaze)
       .showPredictionPoints(false)
       .begin();
@@ -270,6 +70,7 @@ async function startTracking(){
     alert("Fout bij starten: " + err.message);
 
   }
+
 }
 
 /* =========================================================
@@ -328,7 +129,7 @@ function onGaze(data){
   document.getElementById("coord-x").textContent = Math.round(x);
   document.getElementById("coord-y").textContent = Math.round(y);
 
-  // HIER gebruik je later je spel controls
+  // Gebruik later in je spel
   window.EyeTracker = {
     x,
     y,
@@ -463,7 +264,7 @@ function resetEverything(){
   gazeCursor.style.top = "-100px";
 
   document.getElementById("instruction-banner").innerHTML =
-    "Gerest.";
+    "Gereset.";
 
 }
 
@@ -506,6 +307,3 @@ window.addEventListener("resize", ()=>{
 
 });
 </script>
-
-</body>
-</html>

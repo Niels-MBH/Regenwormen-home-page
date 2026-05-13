@@ -327,6 +327,8 @@ eyeY = (eyeY - 0.5) * 2 + 0.5;
 
   // Omzetten naar scherm
 let screenX = eyeX * window.innerWidth;
+eyeY = 1 - eyeY;
+eyeY = (eyeY - 0.5) * 1.6 + 0.5;
 let screenY = eyeY * window.innerHeight;
 
   // Extra gevoeligheid

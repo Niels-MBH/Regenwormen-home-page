@@ -129,11 +129,13 @@ faceMesh.onResults(results => {
 
 let x = 1 - (irisL.x + irisR.x) / 2;
 let y = (irisL.y + irisR.y) / 2;
+
+// FIX: alleen hier omdraaien (niet dubbel)
 y = 1 - y;
 
 // maak beweging sterker
 x = (x - 0.5) * 2.5 + 0.5;
-y = (y - 0.5) * 2.5 + 0.5;
+y = (y - 0.5) * 4.0 + 0.5;
 
 // voorkom dat hij buiten scherm gaat
 x = Math.min(1, Math.max(0, x));

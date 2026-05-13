@@ -292,19 +292,30 @@ faceMesh.onResults(results => {
 
   const face = results.multiFaceLandmarks[0];
 
-  // Linker iris
-  const leftIris = face[468];
+const leftIris = face[468];
+const rightIris = face[473];
 
-  // Rechter iris
-  const rightIris = face[473];
+// ooghoeken
+const leftOuter = face[33];
+const leftInner = face[133];
 
-  // Gemiddelde positie
-  const eyeX = (leftIris.x + rightIris.x) / 2;
-  const eyeY = (leftIris.y + rightIris.y) / 2;
+const rightOuter = face[362];
+const rightInner = face[263];
+
+// simpele normalisatie (BELANGRIJK)
+function norm(iris, outer, inner){
+  return (iris.x - outer.x) / (inner.x - outer.x);
+}
+
+const leftX = norm(leftIris, leftOuter, leftInner);
+const rightX = norm(rightIris, rightOuter, rightInner);
+
+const eyeX = (leftX + rightX) / 2;
+const eyeY = (leftIris.y + rightIris.y) / 2; // Y laten we simpel
 
   // Omzetten naar scherm
-  let screenX = (1 - eyeX) * window.innerWidth;
-  let screenY = eyeY * window.innerHeight;
+let screenX = eyeX * window.innerWidth;
+let screenY = eyeY * window.innerHeight;
 
   // Extra gevoeligheid
   screenX = (screenX - window.innerWidth/2) * 2 + window.innerWidth/2;

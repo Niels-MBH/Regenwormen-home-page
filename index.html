@@ -6,13 +6,12 @@
 
 <title>🐛 Regenwormen</title>
 
-<!-- MediaPipe -->
+<!-- MediaPipe (nog niet gebruikt in deze snippet) -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <style>
-
-/* ── Fonts ── */
+/* ───────────── FONTS ───────────── */
 @font-face{
   font-family:'Fredoka One';
   font-weight:400;
@@ -34,7 +33,7 @@
   src:url(https://fonts.gstatic.com/s/nunito/v32/XRXV3I6Li01BKofIO-aBXso.woff2) format('woff2');
 }
 
-/* RESET */
+/* ───────────── RESET ───────────── */
 *,*::before,*::after{
   box-sizing:border-box;
   margin:0;
@@ -46,24 +45,16 @@ body{
   background:#2a5c38;
   min-height:100vh;
   color:#2c1810;
-
   background-image:
-    radial-gradient(ellipse at top left,rgba(255,255,255,.06) 0%,transparent 55%),
-    radial-gradient(ellipse at bottom right,rgba(0,0,0,.18) 0%,transparent 55%);
+    radial-gradient(ellipse at top left,rgba(255,255,255,.06),transparent 55%),
+    radial-gradient(ellipse at bottom right,rgba(0,0,0,.18),transparent 55%);
 }
 
-/* screens */
-.screen{
-  display:none;
-}
+/* ───────────── SCREENS ───────────── */
+.screen{ display:none; }
+.screen.active{ display:block; }
 
-.screen.active{
-  display:block;
-}
-  
-
-
-/* setup */
+/* ───────────── SETUP ───────────── */
 #setup{
   max-width:560px;
   margin:0 auto;
@@ -71,25 +62,18 @@ body{
   text-align:center;
 }
 
-.logo-worm{
-  font-size:3rem;
-  line-height:1;
-}
-
+.logo-worm{ font-size:3rem; }
 .logo{
   font-family:'Fredoka One',sans-serif;
   font-size:3.8rem;
   color:#f5b731;
   text-shadow:3px 4px 0 #c8901a;
-  line-height:1;
-  margin-bottom:.2rem;
 }
 
 .logo-sub{
   color:rgba(255,255,255,.65);
   font-size:1rem;
   font-weight:700;
-  letter-spacing:.05em;
   margin-bottom:1.75rem;
 }
 
@@ -100,14 +84,13 @@ body{
   box-shadow:0 8px 32px rgba(0,0,0,.3);
 }
 
+/* ───────────── INPUTS ───────────── */
 .field-label{
   display:block;
   text-align:left;
   font-weight:800;
   font-size:.82rem;
-  color:#7a4a1e;
   text-transform:uppercase;
-  letter-spacing:.08em;
   margin-bottom:.55rem;
 }
 
@@ -124,11 +107,8 @@ body{
   border-radius:50%;
   border:3px solid #ddd;
   background:#fff;
-  font-family:'Fredoka One',sans-serif;
-  font-size:1.4rem;
-  color:#7a4a1e;
+  font-family:'Fredoka One';
   cursor:pointer;
-  transition:all .15s;
 }
 
 .count-btn.active{
@@ -136,13 +116,12 @@ body{
   border-color:#1a9e52;
   color:#fff;
   transform:scale(1.1);
-  box-shadow:0 3px 0 #1a9e52;
 }
 
+/* ───────────── INPUT FIELDS ───────────── */
 .name-inputs{
   display:grid;
   gap:8px;
-  margin-bottom:1.4rem;
 }
 
 .name-input{
@@ -150,181 +129,38 @@ body{
   padding:12px 14px;
   border-radius:12px;
   border:2px solid #e0d8c8;
-  font-family:'Nunito',sans-serif;
-  font-size:1rem;
   font-weight:700;
-  color:#2c1810;
-  background:#fff;
-  outline:none;
 }
 
-.name-input:focus{
-  border-color:#2ecc71;
-}
-
-/* buttons */
+/* ───────────── BUTTONS ───────────── */
 .big-btn{
   width:100%;
-  padding:18px 20px;
+  padding:18px;
   border-radius:18px;
   border:none;
-  font-family:'Fredoka One',sans-serif;
-  font-size:1.35rem;
+  font-family:'Fredoka One';
+  font-size:1.2rem;
   cursor:pointer;
-  transition:transform .1s,box-shadow .1s,opacity .2s;
-  position:relative;
-  overflow:hidden;
-
   display:flex;
-  align-items:center;
   justify-content:center;
   gap:10px;
 }
 
-.big-btn:disabled{
-  opacity:.35;
-  cursor:not-allowed;
-}
+.btn-green{ background:#2ecc71; color:#fff; }
+.btn-blue{ background:#3498db; color:#fff; }
+.btn-orange{ background:#e67e22; color:#fff; }
+.btn-yellow{ background:#f5b731; color:#fff; }
 
-.btn-green{
-  background:#2ecc71;
-  color:#fff;
-  box-shadow:0 4px 0 #1a9e52;
-}
+.big-btn:disabled{ opacity:.4; }
 
-.btn-blue{
-  background:#3498db;
-  color:#fff;
-  box-shadow:0 4px 0 #1a6ea8;
-}
-
-.btn-orange{
-  background:#e67e22;
-  color:#fff;
-  box-shadow:0 4px 0 #b85a12;
-}
-  .btn-yellow{
-  background:#f5b731;
-  color:#fff;
-  box-shadow:0 4px 0 #c8901a;
-}
-
-.big-btn:not(:disabled):hover{
-  transform:translateY(-2px);
-}
-
-.big-btn:not(:disabled):active{
-  transform:scale(.97);
-}
-
-/* dwell ring */
+/* ───────────── DWELL ───────────── */
 .dwell-ring{
   position:absolute;
   inset:0;
   border-radius:inherit;
-  pointer-events:none;
-
-  /* 👇 BELANGRIJK: donker + contrast */
   background:conic-gradient(rgba(0,0,0,.85) 0deg, transparent 0deg);
-
-  /* extra zichtbaarheid op witte dobbelstenen */
-  box-shadow:
-    inset 0 0 0 3px rgba(0,0,0,.25),
-    0 0 10px rgba(0,0,0,.25);
-
-  opacity:1;
+  box-shadow:inset 0 0 0 3px rgba(0,0,0,.25);
 }
-
-/* dwell */
-.dwell-block{
-  margin-top:1.25rem;
-  background:rgba(0,0,0,.25);
-  border-radius:16px;
-  padding:1rem 1.25rem;
-  text-align:left;
-}
-
-.dwell-header{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:1rem;
-  font-weight:700;
-  color:#fff;
-  margin-bottom:.3rem;
-}
-
-.dwell-explain{
-  font-size:.82rem;
-  color:rgba(255,255,255,.65);
-  font-weight:700;
-  margin-bottom:.75rem;
-  line-height:1.45;
-}
-
-.toggle{
-  width:50px;
-  height:28px;
-  background:#666;
-  border-radius:14px;
-  position:relative;
-  cursor:pointer;
-  transition:background .2s;
-  flex-shrink:0;
-}
-
-.toggle.on{
-  background:#2ecc71;
-}
-
-.toggle::after{
-  content:'';
-  position:absolute;
-  width:22px;
-  height:22px;
-  background:#fff;
-  border-radius:50%;
-  top:3px;
-  left:3px;
-  transition:left .2s;
-}
-
-.toggle.on::after{
-  left:25px;
-}
-
-.speed-row{
-  display:none;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:.6rem;
-}
-
-.speed-row.visible{
-  display:flex;
-}
-
-.speed-btn{
-  padding:4px 12px;
-  border-radius:20px;
-  border:2px solid rgba(255,255,255,.3);
-  background:transparent;
-  color:rgba(255,255,255,.65);
-  font-family:'Nunito',sans-serif;
-  font-size:.82rem;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.speed-btn.active{
-  background:rgba(255,255,255,.2);
-  color:#fff;
-  border-color:rgba(255,255,255,.7);
-}
-
-
-
-
 </style>
 </head>
 
@@ -334,284 +170,66 @@ body{
 
 <!-- SETUP -->
 <div id="setup" class="screen active">
-
   <div class="logo-worm">🐛</div>
   <div class="logo">Regenwormen</div>
   <div class="logo-sub">Scharrelen met dobbelstenen — 2 tot 7 spelers</div>
 
   <div class="card">
-
     <label class="field-label">Hoeveel spelers?</label>
     <div class="count-row" id="countRow"></div>
 
     <label class="field-label">Namen</label>
     <div class="name-inputs" id="nameInputs"></div>
 
-    <button class="big-btn btn-green" id="btnStart" onclick="startGame()">
-      🐛 Spel starten!
-      <div class="dwell-ring"></div>
-    </button>
-
+    <button class="big-btn btn-green" onclick="startGame()">🐛 Spel starten<div class="dwell-ring"></div></button>
     <br>
-
-    <button class="big-btn btn-blue" onclick="startTracking()">
-      👁️ Eye tracking aan
-      <div class="dwell-ring"></div>
-    </button>
-
+    <button class="big-btn btn-blue" onclick="startTracking()">👁️ Eye tracking aan<div class="dwell-ring"></div></button>
     <br>
-    
-    <button class="big-btn btn-yellow" id="soundBtn" onclick="toggleSound()">
-  🔊 Geluid aan
-  <div class="dwell-ring"></div>
-</button>
-
+    <button class="big-btn btn-yellow" onclick="toggleSound()">🔊 Geluid aan<div class="dwell-ring"></div></button>
     <br>
-
-    <button class="big-btn btn-orange" onclick="showRules()">
-  📜 Spelregels
-  <div class="dwell-ring"></div>
-</button>
-
+    <button class="big-btn btn-orange" onclick="showRules()">📜 Spelregels<div class="dwell-ring"></div></button>
   </div>
-
-  <div class="dwell-block">
-
-    <div class="dwell-header">
-      <div class="toggle" id="dwellToggle" onclick="toggleDwell()"></div>
-      Dwell-timer (voor oogbesturing)
-    </div>
-
-    <div class="dwell-explain">
-      Oogbesturingssoftware beweegt de cursor.
-      De dwell-timer klikt automatisch als je lang genoeg kijkt.
-    </div>
-
-    <div class="speed-row" id="speedRow">
-
-      <button class="speed-btn" data-ms="2500" onclick="setSpeed(this)">
-        Lang (2,5s)
-      </button>
-
-      <button class="speed-btn active" data-ms="1500" onclick="setSpeed(this)">
-        Normaal (1,5s)
-      </button>
-
-      <button class="speed-btn" data-ms="800" onclick="setSpeed(this)">
-        Kort (0,8s)
-      </button>
-
-    </div>
-
-  </div>
-
 </div>
 
-<!-- GAME -->
-  <!-- RULES -->
+<!-- RULES -->
 <div id="rules" class="screen">
-
- <div class="card">
-
+  <div class="card">
     <div class="logo">📜 Spelregels</div>
 
     <div class="card" style="text-align:left; line-height:1.6;">
+      <h3>🎯 Doel</h3>
+      Verzamel zoveel mogelijk wormen.
 
-  <h3>🎯 Doel van het spel</h3>
-  Het doel van het spel is om zoveel mogelijk wormen te verzamelen door slim te kiezen met dobbelstenen.  
-  De speler met de meeste wormen aan het einde wint.
+      <h3>🎲 Spelverloop</h3>
+      Gooi dobbelstenen, kies gelijke waarden en bouw score op.
 
-  <br><br>
+      <h3>🏆 Winnaar</h3>
+      Meeste wormen = winst.
+    </div>
 
-  <h3>👥 Spelers</h3>
-  Het spel kan gespeeld worden met 2 tot 7 spelers.  
-  Iedereen speelt om de beurt.
-
-  <br><br>
-
-  <h3>⏱️ Dwelltimer</h3>
-  Een dwell timer is een timer die een actie pas uitvoert als je je blik of cursor een korte tijd op dezelfde plek houdt. 
-  Het wordt gebruikt om te voorkomen dat snelle of onbedoelde bewegingen meteen een klik of actie veroorzaken.
-
-  <br><br>    
-
-  <h3>🎲 Spelverloop</h3>
-
-  <b>1. Dobbelstenen gooien</b><br>
-  Je begint je beurt met 8 dobbelstenen en gooit ze allemaal tegelijk.
-
-  <br><br>
-
-  <b>2. Een waarde kiezen</b><br>
-  Na elke worp kies je alle dobbelstenen met dezelfde waarde (cijfers of 🐛 wormen).  
-  Je mag alleen kiezen wat op dat moment beschikbaar is.
-
-  <br><br>
-
-  <b>3. Opzij leggen</b><br>
-  De gekozen dobbelstenen leg je apart. Dit vormt jouw beurtscore.
-
-  <br><br>
-
-  <b>4. Opnieuw gooien</b><br>
-  Je gooit opnieuw met de overgebleven dobbelstenen en probeert opnieuw te kiezen.
-
-  <br><br>
-
-  <b>5. Beurt stoppen</b><br>
-  Je mag op elk moment stoppen, maar je moet minstens 1 worm (🐛) hebben gekozen om je beurt geldig te maken.
-
-  <br><br>
-
-  <h3>🐛 Wormen en tegels</h3>
-  Wormen bepalen hoeveel punten je verdient.  
-  Hoe beter je keuzes, hoe meer wormen je verzamelt.
-
-  <br><br>
-
-  <h3>🧱 Tegels pakken</h3>
-  Aan het einde van je beurt bepaal je je score:<br>
-  - Je mag een tegel pakken die overeenkomt met je score<br>
-  - Als die niet beschikbaar is, pak je de hoogste lagere tegel<br>
-  - Elke speler bouwt zo een stapel tegels op
-
-  <br><br>
-
-  <h3>⚔️ Tegels stelen</h3>
-  Als jouw score exact gelijk is aan de bovenste tegel van een andere speler, mag je die tegel stelen.
-
-  <br><br>
-
-  <h3>❌ Fouten / mislukte beurt</h3>
-  Als je geen geldige keuze hebt of geen worm hebt:
-  - Je beurt is ongeldig
-  - Je moet een tegel terugleggen (indien mogelijk)
-  - Daarna is de volgende speler aan de beurt
-
-  <br><br>
-
-  <h3>🏆 Einde van het spel</h3>
-  Het spel eindigt wanneer alle tegels op zijn.  
-  De speler met de meeste wormen wint.
-
-  <br><br>
-
-  <h3>🧠 Strategie</h3>
-  - Risico nemen kan meer punten opleveren  
-  - Maar stoppen op tijd is vaak slimmer  
-  - Andere spelers kunnen je tegels stelen
-
+    <button class="big-btn btn-green" onclick="showScreen('setup')">⬅ Terug<div class="dwell-ring"></div></button>
+  </div>
 </div>
 
-    </div>
-
-    <button class="big-btn btn-green" onclick="showScreen('setup')">
-      ⬅ Terug
-      <div class="dwell-ring"></div>
-    </button>
-
-  </div>
-
-</div>
-
-  <div id="game" class="screen">
-
-  <div class="g-header">
-
-    <div>
-      <div class="gh-label">Aan de beurt</div>
-      <div class="gh-name" id="hName">—</div>
-    </div>
-
-    <div class="gh-mid">
-      <div class="gh-score" id="hScore">0</div>
-      <div class="gh-label">Beurt totaal</div>
-    </div>
-
-    <div class="gh-right">
-      <div class="gh-label">Jouw wormen</div>
-      <div id="hWorms">🐛 0</div>
-    </div>
-
-  </div>
-
-  <div class="g-section">
-
-    <div class="sec-label">Tegels op tafel</div>
-    <div class="tile-row" id="tileRow"></div>
-
-  </div>
-
-  <div class="dice-card">
-
-    <div class="instruction" id="instruction">
-      Druk op 🎲 Gooi! om te beginnen
-    </div>
-
-    <div class="sec-label-dark">
-      Gegooid — klik op een dobbelsteen
-    </div>
-
-    <div class="dice-row" id="diceRow"></div>
-
-    <div class="sec-label-dark">
-      Opzijgelegd
-    </div>
-
-    <div class="chosen-area" id="chosenArea"></div>
-
-    <div class="action-row">
-
-      <button class="big-btn btn-blue" id="btnRoll" onclick="doRoll()">
-        🎲 Gooi!
-        <div class="dwell-ring"></div>
-      </button>
-
-      <button class="big-btn btn-orange" id="btnStop" onclick="doStop()" disabled>
-        🛑 Stop beurt
-        <div class="dwell-ring"></div>
-      </button>
-
-    </div>
-
-  </div>
-
-  <div class="players-grid" id="playersGrid"></div>
-
+<!-- GAME -->
+<div id="game" class="screen">
+  <div id="playersGrid"></div>
 </div>
 
 <!-- GAME OVER -->
 <div id="gameover" class="screen">
-
-  <div class="go-title">🏆 Einde spel!</div>
-
-  <div class="ranking" id="rankingList"></div>
-
-  <button class="big-btn btn-green" id="btnReplay" onclick="resetGame()">
-    🔄 Opnieuw spelen
-    <div class="dwell-ring"></div>
-  </button>
-
+  <div>🏆 Einde spel!</div>
 </div>
 
 <!-- OVERLAY -->
 <div id="overlay">
-
   <div class="msg-box">
-
-    <div class="msg-icon" id="mIcon">😢</div>
-    <div class="msg-title" id="mTitle">—</div>
-    <div class="msg-text" id="mText"></div>
-
-    <button class="msg-ok" id="mBtn" onclick="closeOverlay()">
-      OK
-      <div class="dwell-ring"></div>
-    </button>
-
+    <div id="mIcon">😢</div>
+    <div id="mTitle"></div>
+    <div id="mText"></div>
+    <button onclick="closeOverlay()">OK<div class="dwell-ring"></div></button>
   </div>
-
 </div>
 
-</script>
 </body>
 </html>

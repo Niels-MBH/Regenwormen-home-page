@@ -22,13 +22,13 @@ body{
   position:relative;
   overflow:hidden;
 
-  width:260px;
+  width:280px;
   height:90px;
 
   border:none;
   border-radius:20px;
 
-  font-size:1.4rem;
+  font-size:1.3rem;
   font-weight:bold;
 
   background:#22c55e;
@@ -39,7 +39,7 @@ body{
   box-shadow:0 6px 0 #15803d;
 }
 
-/* ring die vult */
+/* voortgang ring */
 .dwell-ring{
   position:absolute;
   inset:0;
@@ -53,7 +53,7 @@ body{
     );
 }
 
-/* tekst boven de ring */
+/* knop tekst */
 .btn-text{
   position:relative;
   z-index:2;
@@ -73,7 +73,7 @@ body{
 <button class="dwell-btn" id="dwellButton">
 
   <span class="btn-text">
-    Hover 2 seconden
+    Hover om door te gaan
   </span>
 
   <div class="dwell-ring"></div>
@@ -81,7 +81,7 @@ body{
 </button>
 
 <div class="info">
-  Houd je muis stil op de knop
+  Houd je muis 2 seconden stil op de knop
 </div>
 
 <script>
@@ -90,7 +90,7 @@ body{
    INSTELLINGEN
 ========================= */
 
-const dwellTime = 2000; // 2 seconden
+const dwellTime = 2000;
 
 const button =
   document.getElementById("dwellButton");
@@ -110,7 +110,6 @@ button.addEventListener("mouseenter", () => {
 
   timer = setInterval(() => {
 
-    /* hoeveel procent voorbij */
     const progress =
       Math.min(
         (Date.now() - start) / dwellTime,
@@ -125,14 +124,14 @@ button.addEventListener("mouseenter", () => {
         transparent 0deg
       )`;
 
-    /* klaar -> klik actie */
+    /* klaar */
     if(progress >= 1){
 
       clearInterval(timer);
 
-      ring.style.background = "";
+      /* andere pagina openen */
+      window.location.href = "pagina2.html";
 
-      alert("Knop automatisch geactiveerd!");
     }
 
   },16);
@@ -140,7 +139,7 @@ button.addEventListener("mouseenter", () => {
 });
 
 /* =========================
-   STOP DWELL
+   RESET ALS MUIS WEGGAAT
 ========================= */
 
 button.addEventListener("mouseleave", () => {

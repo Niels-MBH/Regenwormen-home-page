@@ -44,19 +44,46 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .speed-btn.active{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.7);}
 
 /* ── CALIBRATION SCREEN ── */
-#calibration{position:fixed;inset:0;background:#1a3d26;z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;}
+#calibration{
+  position:fixed;inset:0;
+  background:rgba(10,30,16,.82);
+  z-index:1000;
+  display:none;flex-direction:column;align-items:center;
+  justify-content:flex-start;
+  padding-top:2rem;
+}
 #calibration.active{display:flex;}
-.cal-title{font-family:'Fredoka One',sans-serif;font-size:2.2rem;color:#f5b731;margin-bottom:.5rem;text-align:center;}
-.cal-sub{color:rgba(255,255,255,.7);font-size:.95rem;font-weight:700;margin-bottom:2rem;text-align:center;max-width:480px;line-height:1.5;}
-.cal-progress{color:rgba(255,255,255,.5);font-size:.85rem;font-weight:700;margin-bottom:1.5rem;}
-/* The 9 calibration dot positions */
-#calGrid{position:fixed;inset:0;pointer-events:none;}
-.cal-dot{position:absolute;width:36px;height:36px;border-radius:50%;background:#f5b731;border:3px solid #fff;transform:translate(-50%,-50%);cursor:pointer;pointer-events:all;transition:transform .15s,background .15s;box-shadow:0 0 0 0 rgba(245,183,49,.6);}
-.cal-dot.active{background:#2ecc71;border-color:#fff;transform:translate(-50%,-50%) scale(1.4);animation:calPulse 1s infinite;}
-.cal-dot.done{background:#3498db;border-color:#fff;opacity:.5;pointer-events:none;}
-@keyframes calPulse{0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.6);}50%{box-shadow:0 0 0 14px rgba(46,204,113,0);}}
-.cal-instruction{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;padding:1.2rem 2rem;border-radius:16px;font-family:'Fredoka One',sans-serif;font-size:1.4rem;text-align:center;pointer-events:none;}
-#calDoneBtn{margin-top:1rem;}
+.cal-title{font-family:'Fredoka One',sans-serif;font-size:2rem;color:#f5b731;margin-bottom:.3rem;text-align:center;position:relative;z-index:1002;}
+.cal-sub{color:rgba(255,255,255,.75);font-size:.88rem;font-weight:700;margin-bottom:.75rem;text-align:center;max-width:440px;line-height:1.5;position:relative;z-index:1002;}
+.cal-progress{
+  font-family:'Fredoka One',sans-serif;font-size:1.3rem;color:#fff;
+  background:rgba(0,0,0,.5);padding:6px 20px;border-radius:20px;
+  margin-bottom:.75rem;position:relative;z-index:1002;
+}
+.cal-dot{
+  position:fixed;
+  width:44px;height:44px;
+  border-radius:50%;
+  background:#f5b731;
+  border:4px solid #fff;
+  transform:translate(-50%,-50%);
+  cursor:pointer;
+  transition:transform .15s,background .15s,box-shadow .15s;
+  z-index:1003;
+  overflow:hidden;
+}
+.cal-dot.active{
+  background:#2ecc71;border-color:#fff;
+  transform:translate(-50%,-50%) scale(1.45);
+  animation:calPulse 1s infinite;
+}
+.cal-dot.done{background:#3498db;border-color:#fff;opacity:.45;pointer-events:none;}
+.cal-dot .dwell-ring{border-radius:50%;}
+@keyframes calPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.7);}
+  50%    {box-shadow:0 0 0 18px rgba(46,204,113,0);}
+}
+#calCancelBtn{position:relative;z-index:1002;margin-top:.5rem;}
 
 /* ── GAME ── */
 #game{max-width:940px;margin:0 auto;padding:.75rem;display:flex;flex-direction:column;gap:.75rem;}

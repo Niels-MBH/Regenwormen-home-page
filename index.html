@@ -43,47 +43,46 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .speed-btn{padding:4px 12px;border-radius:20px;border:2px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.65);font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;}
 .speed-btn.active{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.7);}
 
-/* ── CALIBRATION SCREEN ── */
+/* ── CALIBRATION ── */
 #calibration{
   position:fixed;inset:0;
-  background:rgba(10,30,16,.82);
+  background:rgba(8,24,14,.92);
   z-index:1000;
   display:none;flex-direction:column;align-items:center;
   justify-content:flex-start;
-  padding-top:2rem;
+  padding-top:1.5rem;
 }
 #calibration.active{display:flex;}
 .cal-title{font-family:'Fredoka One',sans-serif;font-size:2rem;color:#f5b731;margin-bottom:.3rem;text-align:center;position:relative;z-index:1002;}
-.cal-sub{color:rgba(255,255,255,.75);font-size:.88rem;font-weight:700;margin-bottom:.75rem;text-align:center;max-width:440px;line-height:1.5;position:relative;z-index:1002;}
-.cal-progress{
-  font-family:'Fredoka One',sans-serif;font-size:1.3rem;color:#fff;
-  background:rgba(0,0,0,.5);padding:6px 20px;border-radius:20px;
-  margin-bottom:.75rem;position:relative;z-index:1002;
-}
+.cal-sub{color:rgba(255,255,255,.75);font-size:.88rem;font-weight:700;margin-bottom:.6rem;text-align:center;max-width:480px;line-height:1.5;position:relative;z-index:1002;padding:0 1rem;}
+.cal-progress{font-family:'Fredoka One',sans-serif;font-size:1.3rem;color:#fff;background:rgba(0,0,0,.5);padding:6px 20px;border-radius:20px;margin-bottom:.6rem;position:relative;z-index:1002;}
+/* accuracy badge shown during phase 2 */
+.cal-accuracy{font-family:'Fredoka One',sans-serif;font-size:1rem;color:#2ecc71;background:rgba(0,0,0,.4);padding:4px 16px;border-radius:16px;margin-bottom:.5rem;position:relative;z-index:1002;display:none;}
+
+/* Calibration dots */
 .cal-dot{
   position:fixed;
-  width:44px;height:44px;
+  width:48px;height:48px;
   border-radius:50%;
   background:#f5b731;
   border:4px solid #fff;
   transform:translate(-50%,-50%);
   cursor:pointer;
-  transition:transform .15s,background .15s,box-shadow .15s;
+  transition:transform .2s,background .2s,box-shadow .2s;
   z-index:1003;
   overflow:hidden;
 }
 .cal-dot.active{
   background:#2ecc71;border-color:#fff;
-  transform:translate(-50%,-50%) scale(1.45);
-  animation:calPulse 1s infinite;
+  transform:translate(-50%,-50%) scale(1.5);
+  animation:calPulse 1.1s infinite;
 }
-.cal-dot.done{background:#3498db;border-color:#fff;opacity:.45;pointer-events:none;}
+.cal-dot.done{background:#3498db;border-color:#fff;opacity:.4;pointer-events:none;transform:translate(-50%,-50%) scale(.85);}
 .cal-dot .dwell-ring{border-radius:50%;}
 @keyframes calPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.7);}
-  50%    {box-shadow:0 0 0 18px rgba(46,204,113,0);}
+  0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.8);}
+  50%    {box-shadow:0 0 0 22px rgba(46,204,113,0);}
 }
-#calCancelBtn{position:relative;z-index:1002;margin-top:.5rem;}
 
 /* ── GAME ── */
 #game{max-width:940px;margin:0 auto;padding:.75rem;display:flex;flex-direction:column;gap:.75rem;}
@@ -144,25 +143,52 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 
 /* ── EYE CURSOR ── */
 #eyeCursor{
-  position:fixed;width:28px;height:28px;border-radius:50%;
-  background:rgba(0,229,255,.35);border:3px solid #00e5ff;
-  z-index:99999;pointer-events:none;
-  transform:translate(-50%,-50%);display:none;
-  transition:left .05s linear,top .05s linear;
-  box-shadow:0 0 12px rgba(0,229,255,.6);
+  position:fixed;
+  width:32px;height:32px;
+  border-radius:50%;
+  background:rgba(0,229,255,.25);
+  border:3px solid rgba(0,229,255,.85);
+  z-index:99999;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+  display:none;
+  box-shadow:0 0 14px rgba(0,229,255,.5), inset 0 0 8px rgba(0,229,255,.2);
+  /* NO CSS transition — we animate manually for lower latency */
+}
+/* Inner dot for precision */
+#eyeCursor::after{
+  content:'';
+  position:absolute;
+  width:6px;height:6px;
+  border-radius:50%;
+  background:#00e5ff;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+}
+
+/* ── GAZE DEBUG PANEL (hidden by default) ── */
+#gazeDebug{
+  position:fixed;bottom:12px;right:12px;
+  background:rgba(0,0,0,.75);color:#0f0;
+  font-family:monospace;font-size:11px;
+  padding:8px 12px;border-radius:10px;
+  z-index:99998;line-height:1.6;
+  display:none;
+  pointer-events:none;
 }
 
 /* ── ANIMATIONS ── */
 @keyframes rollAnim{0%{transform:rotate(0) scale(1)}20%{transform:rotate(-14deg) scale(1.12)}50%{transform:rotate(10deg) scale(1.08)}80%{transform:rotate(-5deg) scale(1.1)}100%{transform:rotate(0) scale(1)}}
 .die.rolling{animation:rollAnim .45s ease;}
 
-/* Hide WebGazer's built-in video/overlay — we manage the cursor ourselves */
-#webgazerVideoContainer,#webgazerFaceOverlay,#webgazerFaceFeedbackBox{display:none !important;}
+/* Hide WebGazer's built-in video/overlay */
+#webgazerVideoContainer,#webgazerFaceOverlay,#webgazerFaceFeedbackBox,#webgazerVideoFeed{display:none !important;}
 </style>
 </head>
 <body>
 
 <div id="eyeCursor"></div>
+<div id="gazeDebug"></div>
 
 <!-- ══════════ SETUP ══════════ -->
 <div id="setup" class="screen active">
@@ -179,7 +205,6 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
       🐛 Spel starten! <div class="dwell-ring"></div>
     </button>
     <br>
-    <!-- Eye tracking button: opens calibration flow -->
     <button class="big-btn btn-blue" id="btnEye" onclick="openCalibration()">
       👁️ Eye tracking kalibreren <div class="dwell-ring"></div>
     </button>
@@ -206,22 +231,18 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 <!-- ══════════ CALIBRATION ══════════ -->
 <div id="calibration" class="screen">
   <div class="cal-title">👁️ Eye tracking kalibratie</div>
-  <div class="cal-sub">
-    Kijk naar elk geel punt en klik erop (of houd je blik 1,5s vast).<br>
-    Doe dit voor alle 9 punten — van links-boven naar rechts-onder.
+  <div class="cal-sub" id="calSubText">
+    Fase 1: Klik op elk groen punt terwijl je ernaar kijkt.<br>
+    Houd je hoofd stil en kijk recht naar het punt voor je klikt.
   </div>
-  <div class="cal-progress" id="calProgress">Punt 1 van 9</div>
-  <button class="big-btn btn-red" style="max-width:260px;" onclick="cancelCalibration()">
+  <div class="cal-progress" id="calProgress">Punt 1 van 16</div>
+  <div class="cal-accuracy" id="calAccuracy">Nauwkeurigheid: —</div>
+  <button class="big-btn btn-red" style="max-width:260px;" onclick="cancelCalibration()" id="calCancelBtn">
     ✖ Annuleren <div class="dwell-ring"></div>
   </button>
 </div>
 
-<!-- Calibration dots rendered over everything -->
 <div id="calGrid"></div>
-<!-- Instruction label shown during calibration -->
-<div class="cal-instruction" id="calInstruction" style="display:none;">
-  👀 Kijk naar het groene punt en klik
-</div>
 
 <!-- ══════════ RULES ══════════ -->
 <div id="rules" class="screen">
@@ -309,14 +330,492 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   DWELL SYSTEM
-   - dwellDuration: ms the gaze must stay on target
-   - isDwellActive(): true only when eye tracking is
-     running AND current player has opted in
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   ██████  EYE TRACKING ENGINE  ██████
+   
+   Architecture:
+   1. GazeFilter     — multi-stage noise reduction pipeline
+   2. CalibrationMap — 16-point bilinear warp + drift correction
+   3. DwellManager   — stable dwell detection with hysteresis
+   4. WebGazer glue  — connects raw predictions to the pipeline
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. GAZE FILTER ─────────────────────────────────────────
+   Pipeline: raw → median buffer → exponential smoothing → velocity gate
+   ─────────────────────────────────────────────────────────── */
+const GazeFilter = (() => {
+  const MEDIAN_WIN  = 7;    // size of median window (odd)
+  const EMA_FAST    = 0.30; // fast EMA for responsive tracking
+  const EMA_SLOW    = 0.10; // slow EMA for steady state
+  const VEL_THRESH  = 280;  // px/s — above this, use fast EMA
+  const JITTER_ZONE = 12;   // px — micro-jitter suppression radius
+
+  let bufX = [], bufY = [];
+  let smoothX = null, smoothY = null;
+  let lastX = null, lastY = null;
+  let lastT = null;
+
+  // Centre of last intentional gaze — resets on large moves
+  let anchorX = null, anchorY = null;
+
+  function median(arr) {
+    const s = [...arr].sort((a,b)=>a-b);
+    const m = Math.floor(s.length/2);
+    return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+  }
+
+  function push(rx, ry) {
+    if (rx == null || ry == null || isNaN(rx) || isNaN(ry)) return null;
+
+    // Median buffer
+    bufX.push(rx); bufY.push(ry);
+    if (bufX.length > MEDIAN_WIN) { bufX.shift(); bufY.shift(); }
+    const mx = median(bufX), my = median(bufY);
+
+    const now = performance.now();
+
+    // Bootstrap
+    if (smoothX === null) {
+      smoothX = mx; smoothY = my;
+      anchorX = mx; anchorY = my;
+      lastX = mx; lastY = my; lastT = now;
+      return { x: smoothX, y: smoothY };
+    }
+
+    // Velocity-adaptive EMA
+    const dt   = Math.max(1, now - lastT) / 1000;
+    const dist = Math.hypot(mx - lastX, my - lastY);
+    const vel  = dist / dt;
+    lastX = mx; lastY = my; lastT = now;
+
+    const alpha = vel > VEL_THRESH ? EMA_FAST : EMA_SLOW;
+    smoothX = smoothX + alpha * (mx - smoothX);
+    smoothY = smoothY + alpha * (my - smoothY);
+
+    // Micro-jitter suppression: if within dead zone of anchor, snap back
+    const dAnchor = Math.hypot(smoothX - anchorX, smoothY - anchorY);
+    if (dAnchor < JITTER_ZONE) {
+      smoothX = anchorX + (smoothX - anchorX) * 0.4;
+      smoothY = anchorY + (smoothY - anchorY) * 0.4;
+    } else {
+      // New intentional position — update anchor
+      anchorX = smoothX; anchorY = smoothY;
+    }
+
+    return { x: smoothX, y: smoothY };
+  }
+
+  function reset() {
+    bufX=[]; bufY=[];
+    smoothX=null; smoothY=null;
+    lastX=null; lastY=null; lastT=null;
+    anchorX=null; anchorY=null;
+  }
+
+  return { push, reset };
+})();
+
+
+/* ── 2. CALIBRATION MAP ─────────────────────────────────────
+   Stores 16 reference points. On each click we collect multiple
+   gaze samples and average them. We then compute a per-point
+   offset. At runtime, correction = weighted average of nearby points.
+   Also includes online drift correction.
+   ─────────────────────────────────────────────────────────── */
+const CalibrationMap = (() => {
+  let points = []; // { sx, sy, gx, gy }  screen vs gaze coords
+
+  // Collect raw samples during calibration (called continuously)
+  let samplesX = [], samplesY = [];
+
+  function startSample() { samplesX = []; samplesY = []; }
+
+  function addSample(gx, gy) {
+    if (gx != null && !isNaN(gx)) { samplesX.push(gx); samplesY.push(gy); }
+  }
+
+  function commitPoint(sx, sy) {
+    if (samplesX.length < 3) return false;
+    // Trimmed mean: drop lowest/highest 25%
+    function trimMean(arr) {
+      const s = [...arr].sort((a,b)=>a-b);
+      const trim = Math.floor(s.length * 0.25);
+      const trimmed = s.slice(trim, s.length - trim);
+      return trimmed.reduce((a,b)=>a+b,0) / trimmed.length;
+    }
+    const gx = trimMean(samplesX), gy = trimMean(samplesY);
+    points.push({ sx, sy, gx, gy });
+    return true;
+  }
+
+  // Inverse distance weighted correction
+  // Given a raw gaze point, return the corrected screen point
+  function correct(rawX, rawY) {
+    if (points.length === 0) return { x: rawX, y: rawY };
+
+    // IDW with p=2
+    let wSum = 0, cx = 0, cy = 0;
+    points.forEach(p => {
+      // offset: what to add to raw gaze to get screen coord
+      const offX = p.sx - p.gx;
+      const offY = p.sy - p.gy;
+      const dist = Math.max(1, Math.hypot(rawX - p.gx, rawY - p.gy));
+      const w    = 1 / (dist * dist);
+      wSum += w;
+      cx   += w * (rawX + offX);
+      cy   += w * (rawY + offY);
+    });
+
+    return { x: cx / wSum, y: cy / wSum };
+  }
+
+  // Online drift correction: if we get a reliable fixation near a button
+  // the user clicked, we add that as a soft calibration point
+  function onConfirmedGaze(screenX, screenY, gazeX, gazeY) {
+    // Only add if error is meaningful (> 20px) but not crazy (< 200px)
+    const err = Math.hypot(screenX - gazeX, screenY - gazeY);
+    if (err < 20 || err > 200) return;
+    // Add with reduced weight — keep max 8 drift points by overwriting oldest
+    points.push({ sx: screenX, sy: screenY, gx: gazeX, gy: gazeY, drift: true });
+    // Trim drift points to avoid overloading IDW
+    const driftPts = points.filter(p => p.drift);
+    if (driftPts.length > 8) {
+      const idx = points.indexOf(driftPts[0]);
+      points.splice(idx, 1);
+    }
+  }
+
+  function clear() { points = []; }
+  function count() { return points.length; }
+
+  return { startSample, addSample, commitPoint, correct, onConfirmedGaze, clear, count };
+})();
+
+
+/* ── 3. DWELL MANAGER ───────────────────────────────────────
+   Hysteresis-based dwell: uses a "dwell zone" radius so tiny
+   wobbles within the zone don't reset the timer.
+   ─────────────────────────────────────────────────────────── */
+const DwellManager = (() => {
+  const DWELL_RADIUS = 50; // px radius — staying within this counts as same target
+
+  let curEl       = null;
+  let startTime   = 0;
+  let dwellX      = 0, dwellY = 0; // centre of current dwell zone
+  let rafId       = null;
+  let cbMap       = new WeakMap();
+
+  function register(el, cb) { cbMap.set(el, cb); }
+
+  function update(gx, gy, duration) {
+    if (!isDwellActive()) { _clearDwell(); return; }
+
+    const cands = document.querySelectorAll(
+      '.big-btn:not(:disabled), .die:not(.used), .msg-ok, .tile, .cal-dot.active'
+    );
+    let hit = null;
+    cands.forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (gx >= r.left && gx <= r.right && gy >= r.top && gy <= r.bottom) hit = el;
+    });
+
+    if (!hit) { _clearDwell(); return; }
+
+    // Check if still within dwell zone of current target
+    const distFromZone = Math.hypot(gx - dwellX, gy - dwellY);
+    const sameTarget   = hit === curEl;
+
+    if (!sameTarget || distFromZone > DWELL_RADIUS) {
+      // New target or moved far — reset only if genuinely new element
+      if (!sameTarget) {
+        _clearDwell();
+        curEl     = hit;
+        startTime = performance.now();
+        dwellX    = gx; dwellY = gy;
+      }
+      // Same target but drifted — update zone centre gently
+      else {
+        dwellX = dwellX + 0.15 * (gx - dwellX);
+        dwellY = dwellY + 0.15 * (gy - dwellY);
+      }
+    }
+
+    if (!curEl) return;
+
+    const progress = Math.min((performance.now() - startTime) / duration, 1);
+    const ring = curEl.querySelector('.dwell-ring');
+    if (ring) {
+      ring.style.background =
+        `conic-gradient(rgba(255,255,255,.6) ${progress*360}deg, transparent 0deg)`;
+    }
+
+    if (progress >= 1) {
+      const target = curEl;
+      _clearDwell();
+      target.click();
+    }
+  }
+
+  function _clearDwell() {
+    if (curEl) {
+      const ring = curEl.querySelector('.dwell-ring');
+      if (ring) ring.style.background = '';
+    }
+    curEl = null; startTime = 0;
+  }
+
+  return { register, update };
+})();
+
+
+/* ── 4. WEBGAZER INTEGRATION ────────────────────────────────
+   Raw predictions → GazeFilter → CalibrationMap → cursor + dwell
+   ─────────────────────────────────────────────────────────── */
+let eyeEnabled = false;
+
+// Track whether we're currently collecting calibration samples
+let calCollecting = false;
+
+// Latest corrected gaze position (used by DwellManager tick)
+let curGazeX = 0, curGazeY = 0;
+
+function initWebGazer() {
+  webgazer
+    .setRegression('ridge')       // most accurate regression model in WebGazer
+    .setGazeListener((data) => {
+      if (!data) return;
+
+      // Stage 1: median + EMA filter
+      const filtered = GazeFilter.push(data.x, data.y);
+      if (!filtered) return;
+
+      // Stage 2: calibration map correction
+      const corrected = CalibrationMap.correct(filtered.x, filtered.y);
+
+      curGazeX = corrected.x;
+      curGazeY = corrected.y;
+
+      // Accumulate calibration samples if active
+      if (calCollecting) CalibrationMap.addSample(filtered.x, filtered.y);
+
+      // Update cursor position (direct DOM write — no CSS transition latency)
+      const cursor = document.getElementById('eyeCursor');
+      if (cursor.style.display !== 'none') {
+        cursor.style.left = corrected.x + 'px';
+        cursor.style.top  = corrected.y + 'px';
+      }
+
+      // Debug overlay
+      if (debugVisible) updateDebug(data.x, data.y, filtered.x, filtered.y, corrected.x, corrected.y);
+    })
+    .saveDataAcrossSessions(false)
+    .begin();
+
+  // Kill WebGazer's own UI
+  const killUI = () => {
+    ['webgazerVideoContainer','webgazerFaceOverlay','webgazerFaceFeedbackBox','webgazerVideoFeed']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.style.cssText='display:none!important'; });
+  };
+  killUI();
+  setTimeout(killUI, 500);
+  setTimeout(killUI, 1500);
+
+  // Dwell loop: runs on rAF for smooth dwell progress
+  let dwellDuration_ref = () => dwellDuration;
+  const tick = () => {
+    DwellManager.update(curGazeX, curGazeY, dwellDuration);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+/* ── DEBUG PANEL ── */
+let debugVisible = false;
+function updateDebug(rx, ry, fx, fy, cx, cy) {
+  document.getElementById('gazeDebug').innerHTML =
+    `RAW  ${Math.round(rx)},${Math.round(ry)}<br>` +
+    `FILT ${Math.round(fx)},${Math.round(fy)}<br>` +
+    `CORR ${Math.round(cx)},${Math.round(cy)}<br>` +
+    `CPTS ${CalibrationMap.count()}`;
+}
+// Press D to toggle debug panel
+document.addEventListener('keydown', e => {
+  if (e.key === 'd' || e.key === 'D') {
+    debugVisible = !debugVisible;
+    document.getElementById('gazeDebug').style.display = debugVisible ? 'block' : 'none';
+  }
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CALIBRATION FLOW
+   Phase 1: 16 points (4×4 grid) — user clicks each while looking at it
+   Phase 2: 4 verification points — we measure accuracy
+═══════════════════════════════════════════════════════════════ */
+
+// 16-point 4×4 grid (fractions of viewport)
+const CAL_GRID_4x4 = [
+  [.05,.05],[.35,.05],[.65,.05],[.95,.05],
+  [.05,.33],[.35,.33],[.65,.33],[.95,.33],
+  [.05,.66],[.35,.66],[.65,.66],[.95,.66],
+  [.05,.95],[.35,.95],[.65,.95],[.95,.95],
+];
+
+// 4 verification points (not on training positions)
+const CAL_VERIFY = [
+  [.20,.20],[.80,.20],[.20,.80],[.80,.80],
+];
+
+let calPhase      = 1; // 1 = training, 2 = verification
+let calIndex      = 0;
+let calDots       = [];
+let calSampleBuf  = []; // gaze samples gathered while dot is active
+
+// Verification data
+let verifyErrors  = [];
+
+function openCalibration() {
+  if (!eyeEnabled) {
+    eyeEnabled = true;
+    GazeFilter.reset();
+    CalibrationMap.clear();
+    initWebGazer();
+    document.getElementById('dwellSpeedBlock').style.display = 'block';
+  } else {
+    // Re-calibrate: reset filter & map
+    GazeFilter.reset();
+    CalibrationMap.clear();
+  }
+
+  calPhase = 1;
+  calIndex = 0;
+  verifyErrors = [];
+
+  document.getElementById('calAccuracy').style.display = 'none';
+  document.getElementById('calSubText').innerHTML =
+    'Fase 1 van 2: Klik op elk groen punt terwijl je er direct naar kijkt.<br>Houd je hoofd stil. Kijk naar het punt <em>voor</em> je klikt.';
+  document.getElementById('calProgress').textContent = `Punt 1 van ${CAL_GRID_4x4.length}`;
+
+  buildCalDots(CAL_GRID_4x4);
+  showScreen('calibration');
+  activateCalDot(0);
+}
+
+function buildCalDots(positions) {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  calDots = [];
+  positions.forEach((pos, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'cal-dot';
+    dot.style.left = (pos[0] * window.innerWidth)  + 'px';
+    dot.style.top  = (pos[1] * window.innerHeight) + 'px';
+    dot.innerHTML  = '<div class="dwell-ring"></div>';
+    dot.addEventListener('click', () => onCalDotClick(i));
+    grid.appendChild(dot);
+    calDots.push(dot);
+  });
+}
+
+function activateCalDot(idx) {
+  calDots.forEach((d, i) => {
+    d.classList.remove('active');
+    if (i < idx) d.classList.add('done');
+  });
+  if (idx < calDots.length) {
+    calDots[idx].classList.add('active');
+    // Start collecting gaze samples for this dot
+    CalibrationMap.startSample();
+    calCollecting = true;
+  }
+}
+
+function onCalDotClick(idx) {
+  if (idx !== calIndex) return;
+  calCollecting = false;
+
+  const positions = calPhase === 1 ? CAL_GRID_4x4 : CAL_VERIFY;
+  const pos = positions[idx];
+  const sx  = pos[0] * window.innerWidth;
+  const sy  = pos[1] * window.innerHeight;
+
+  if (calPhase === 1) {
+    // Commit training point
+    CalibrationMap.commitPoint(sx, sy);
+    // Also record with WebGazer (helps its internal regression)
+    if (typeof webgazer !== 'undefined') webgazer.recordScreenPosition(sx, sy, 'click');
+
+    calDots[idx].classList.remove('active');
+    calDots[idx].classList.add('done');
+    calIndex++;
+
+    if (calIndex >= CAL_GRID_4x4.length) {
+      startVerificationPhase();
+    } else {
+      document.getElementById('calProgress').textContent = `Punt ${calIndex+1} van ${CAL_GRID_4x4.length}`;
+      activateCalDot(calIndex);
+    }
+
+  } else {
+    // Verification: measure error at this point
+    const corrected = CalibrationMap.correct(curGazeX, curGazeY);
+    // Use raw filtered gaze for error estimate
+    const err = Math.hypot(corrected.x - sx, corrected.y - sy);
+    verifyErrors.push(err);
+
+    calDots[idx].classList.remove('active');
+    calDots[idx].classList.add('done');
+    calIndex++;
+
+    if (calIndex >= CAL_VERIFY.length) {
+      finishCalibration();
+    } else {
+      document.getElementById('calProgress').textContent = `Verificatie ${calIndex+1} van ${CAL_VERIFY.length}`;
+      activateCalDot(calIndex);
+    }
+  }
+}
+
+function startVerificationPhase() {
+  calPhase  = 2;
+  calIndex  = 0;
+  document.getElementById('calSubText').innerHTML =
+    'Fase 2 van 2: Verificatie — kijk naar het punt en klik.<br>Dit meet hoe nauwkeurig de kalibratie is.';
+  document.getElementById('calProgress').textContent = `Verificatie 1 van ${CAL_VERIFY.length}`;
+  document.getElementById('calAccuracy').style.display = 'block';
+  document.getElementById('calAccuracy').textContent = 'Meten...';
+
+  buildCalDots(CAL_VERIFY);
+  activateCalDot(0);
+}
+
+function finishCalibration() {
+  calCollecting = false;
+  document.getElementById('calGrid').innerHTML = '';
+
+  const avgErr = verifyErrors.reduce((a,b)=>a+b,0) / verifyErrors.length;
+  const rating = avgErr < 60 ? '🟢 Uitstekend' : avgErr < 120 ? '🟡 Goed' : '🔴 Matig — herkalibreer?';
+
+  document.getElementById('eyeCursor').style.display = 'block';
+  updateAccessibility();
+  showScreen('setup');
+
+  setTimeout(() => {
+    alert(`✅ Kalibratie klaar!\n\nGemiddelde afwijking: ${Math.round(avgErr)}px — ${rating}\n\nTip: Press D tijdens het spel voor debug-informatie.`);
+  }, 100);
+}
+
+function cancelCalibration() {
+  calCollecting = false;
+  document.getElementById('calGrid').innerHTML = '';
+  showScreen('setup');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   DWELL CONFIG
+═══════════════════════════════════════════════════════════════ */
 let dwellDuration = 1500;
-let eyeEnabled    = false; // true once WebGazer is running
 
 function isDwellActive() {
   if (!eyeEnabled) return false;
@@ -330,12 +829,12 @@ function setSpeed(btn) {
   dwellDuration = parseInt(btn.dataset.ms);
 }
 
-// Mouse-hover dwell (used when eye tracking NOT active — normal mouse users)
+// Mouse-hover dwell fallback (for eye-tracking players during test / mouse use)
 function applyDwell(el, callback) {
   let timer = null;
   el.addEventListener('mouseenter', () => {
-    if (!isDwellActive()) return; // only dwell for eye-tracking players
-    const ring = el.querySelector('.dwell-ring');
+    if (!isDwellActive()) return;
+    const ring  = el.querySelector('.dwell-ring');
     const start = Date.now();
     timer = setInterval(() => {
       const progress = Math.min((Date.now() - start) / dwellDuration, 1);
@@ -355,199 +854,10 @@ function applyDwell(el, callback) {
   });
 }
 
-/* ═══════════════════════════════════════════════
-   WEBGAZER — gaze-based cursor + dwell
-═══════════════════════════════════════════════ */
-// Smoothing: exponential moving average on raw gaze coordinates
-const SMOOTH = 0.18; // lower = smoother but more lag
-let gazeX = -1000, gazeY = -1000;
 
-// Gaze dwell state (separate from mouse-hover dwell)
-let gazeHoverEl    = null;
-let gazeHoverStart = 0;
-
-function initWebGazer() {
-  // Suppress WebGazer's own video box and prediction dot
-  webgazer
-    .setGazeListener((data) => {
-      if (!data) return;
-      // Smooth the raw gaze point
-      gazeX = gazeX < 0 ? data.x : gazeX + SMOOTH * (data.x - gazeX);
-      gazeY = gazeY < 0 ? data.y : gazeY + SMOOTH * (data.y - gazeY);
-      moveCursor(gazeX, gazeY);
-      handleGazeDwell(gazeX, gazeY);
-    })
-    .saveDataAcrossSessions(false) // fresh calibration every session
-    .begin();
-
-  // Hide built-in WebGazer UI elements once they appear
-  setTimeout(() => {
-    ['webgazerVideoContainer','webgazerFaceOverlay','webgazerFaceFeedbackBox',
-     'webgazerVideoFeed','webgazerFaceFeedbackBox'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-  }, 800);
-}
-
-function moveCursor(x, y) {
-  const cursor = document.getElementById('eyeCursor');
-  cursor.style.left = x + 'px';
-  cursor.style.top  = y + 'px';
-}
-
-// Gaze dwell: same logic as mouse dwell but driven by gaze position
-function handleGazeDwell(gx, gy) {
-  if (!isDwellActive()) {
-    clearGazeDwell();
-    return;
-  }
-
-  // Find topmost interactive element under gaze point
-  const candidates = document.querySelectorAll(
-    '.big-btn:not(:disabled), .die:not(.used), .msg-ok, .tile, .cal-dot'
-  );
-  let hit = null;
-  candidates.forEach(el => {
-    const r = el.getBoundingClientRect();
-    if (gx >= r.left && gx <= r.right && gy >= r.top && gy <= r.bottom) {
-      hit = el;
-    }
-  });
-
-  if (hit !== gazeHoverEl) {
-    // Moved to a new element — reset dwell timer
-    clearGazeDwell();
-    gazeHoverEl    = hit;
-    gazeHoverStart = Date.now();
-  }
-
-  if (!gazeHoverEl) return;
-
-  const progress = Math.min((Date.now() - gazeHoverStart) / dwellDuration, 1);
-  const ring = gazeHoverEl.querySelector('.dwell-ring');
-  if (ring) {
-    ring.style.background =
-      `conic-gradient(rgba(255,255,255,.55) ${progress*360}deg,transparent 0deg)`;
-  }
-
-  if (progress >= 1) {
-    const target = gazeHoverEl;
-    clearGazeDwell();
-    target.click();
-  }
-}
-
-function clearGazeDwell() {
-  if (gazeHoverEl) {
-    const ring = gazeHoverEl.querySelector('.dwell-ring');
-    if (ring) ring.style.background = '';
-  }
-  gazeHoverEl    = null;
-  gazeHoverStart = 0;
-}
-
-/* ═══════════════════════════════════════════════
-   CALIBRATION FLOW
-   9-point grid. Player clicks (or dwells on) each
-   dot. WebGazer records the gaze→screen mapping.
-═══════════════════════════════════════════════ */
-// 9 positions as [xFraction, yFraction] of viewport
-const CAL_POSITIONS = [
-  [.05,.05],[.5,.05],[.95,.05],
-  [.05,.5 ],[.5,.5 ],[.95,.5 ],
-  [.05,.95],[.5,.95],[.95,.95],
-];
-let calIndex      = 0;
-let calDots       = [];
-let calResolve    = null; // promise resolver when done
-
-function openCalibration() {
-  // Start WebGazer if not already running
-  if (!eyeEnabled) {
-    eyeEnabled = true;
-    initWebGazer();
-    document.getElementById('dwellSpeedBlock').style.display = 'block';
-  }
-
-  calIndex = 0;
-  buildCalDots();
-  showScreen('calibration');
-  showCalDot(0);
-  document.getElementById('calInstruction').style.display = 'block';
-}
-
-function buildCalDots() {
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-  calDots = [];
-  CAL_POSITIONS.forEach((pos, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'cal-dot';
-    dot.style.left = (pos[0] * window.innerWidth)  + 'px';
-    dot.style.top  = (pos[1] * window.innerHeight) + 'px';
-    dot.addEventListener('click', () => onCalDotClick(i));
-    grid.appendChild(dot);
-    calDots.push(dot);
-  });
-}
-
-function showCalDot(idx) {
-  calDots.forEach((d, i) => {
-    d.classList.remove('active');
-    if (i < idx) d.classList.add('done');
-  });
-  if (idx < calDots.length) {
-    calDots[idx].classList.add('active');
-    document.getElementById('calProgress').textContent =
-      `Punt ${idx + 1} van ${CAL_POSITIONS.length}`;
-  }
-}
-
-function onCalDotClick(idx) {
-  if (idx !== calIndex) return; // only the active dot responds
-
-  // Tell WebGazer to record this calibration point
-  const pos = CAL_POSITIONS[idx];
-  const sx  = pos[0] * window.innerWidth;
-  const sy  = pos[1] * window.innerHeight;
-  webgazer.recordScreenPosition(sx, sy, 'click');
-
-  calDots[idx].classList.remove('active');
-  calDots[idx].classList.add('done');
-  calIndex++;
-
-  if (calIndex >= CAL_POSITIONS.length) {
-    finishCalibration();
-  } else {
-    showCalDot(calIndex);
-  }
-}
-
-function finishCalibration() {
-  document.getElementById('calInstruction').style.display = 'none';
-  document.getElementById('calGrid').innerHTML = '';
-
-  // Show eye cursor in game
-  document.getElementById('eyeCursor').style.display = 'block';
-
-  // Mark all players that were configured with eye tracking
-  updateAccessibility();
-
-  showScreen('setup');
-  // Brief confirmation
-  alert('✅ Kalibratie klaar! Eye tracking is actief.');
-}
-
-function cancelCalibration() {
-  document.getElementById('calInstruction').style.display = 'none';
-  document.getElementById('calGrid').innerHTML = '';
-  showScreen('setup');
-}
-
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    GAME STATE
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════════ */
 const rollSound    = new Audio('dice.mp3');
 const sparkleSound = new Audio('sparkle.mp3');
 let soundEnabled   = true;
@@ -558,9 +868,7 @@ let dice           = [];
 let chosenDice     = [];
 let locked         = [];
 
-/* ═══════════════════════════════════════════════
-   SETUP
-═══════════════════════════════════════════════ */
+/* ── SETUP UI ── */
 let numPlayers = 2;
 const defNames = ['Kristian','Anna','Boris','Carmen','David','Gina','Floris'];
 
@@ -590,18 +898,18 @@ function buildNames() {
     wrapper.className = 'player-setup';
     wrapper.style.cssText = 'background:#fff;padding:12px;border-radius:14px;margin-bottom:10px;';
 
-    const inp         = document.createElement('input');
-    inp.className     = 'name-input';
-    inp.placeholder   = defNames[i];
-    inp.value         = prev[i] || '';
+    const inp       = document.createElement('input');
+    inp.className   = 'name-input';
+    inp.placeholder = defNames[i];
+    inp.value       = prev[i] || '';
 
-    const eyeRow      = document.createElement('div');
+    const eyeRow   = document.createElement('div');
     eyeRow.style.marginTop = '8px';
-    const eyeCheck    = document.createElement('input');
-    eyeCheck.type     = 'checkbox';
+    const eyeCheck = document.createElement('input');
+    eyeCheck.type  = 'checkbox';
     eyeCheck.className = 'eye-check';
-    const eyeLabel    = document.createElement('label');
-    eyeLabel.textContent = ' Eye tracking gebruiken voor deze speler';
+    const eyeLabel = document.createElement('label');
+    eyeLabel.textContent = ' Eye tracking gebruiken';
 
     eyeRow.appendChild(eyeCheck);
     eyeRow.appendChild(eyeLabel);
@@ -627,12 +935,7 @@ function startGame() {
 }
 
 function resetGame() { showScreen('setup'); }
-
-function resetTurn() {
-  dice       = [];
-  chosenDice = [];
-  locked     = [];
-}
+function resetTurn() { dice=[]; chosenDice=[]; locked=[]; }
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -640,16 +943,14 @@ function showScreen(id) {
   if (el) el.classList.add('active');
 }
 
-/* ── helpers ── */
+/* ── HELPERS ── */
 function setInstruction(msg) { document.getElementById('instruction').textContent = msg; }
 function wormValue(t)  { return t <= 24 ? 1 : t <= 28 ? 2 : t <= 32 ? 3 : 4; }
 function label(v)      { return v === 'W' ? '🐛' : String(v); }
 function turnScore()   { return chosenDice.reduce((s,d) => s + (d==='W' ? 5 : d), 0); }
 function pWorms(p)     { return p.tiles.reduce((s,t) => s + wormValue(t), 0); }
 
-/* ═══════════════════════════════════════════════
-   TILE CLICK — direct naar huidige speler + volgende beurt
-═══════════════════════════════════════════════ */
+/* ── TILE CLICK ── */
 function clickTile(tileNum) {
   if (!tableTiles.includes(tileNum)) return;
   tableTiles = tableTiles.filter(t => t !== tileNum);
@@ -658,9 +959,7 @@ function clickTile(tileNum) {
   nextTurn();
 }
 
-/* ═══════════════════════════════════════════════
-   ROLL
-═══════════════════════════════════════════════ */
+/* ── ROLL ── */
 function doRoll() {
   if (soundEnabled) { rollSound.currentTime = 0; rollSound.play(); }
   if (dice.length > 0) return;
@@ -682,9 +981,7 @@ function doRoll() {
   setInstruction(`Klik op een dobbelsteen (${remaining} over)`);
 }
 
-/* ═══════════════════════════════════════════════
-   LOCK VALUE
-═══════════════════════════════════════════════ */
+/* ── LOCK ── */
 function lockValue(value) {
   if (locked.includes(value) || !dice.includes(value)) return;
   if (value === 'W' && soundEnabled) { sparkleSound.currentTime = 0; sparkleSound.play(); }
@@ -695,18 +992,14 @@ function lockValue(value) {
   renderChosen();
   updateHeader();
   if (chosenDice.length === 8) {
-    updateButtons();
-    setInstruction('Alle dobbelstenen gekozen!');
-    setTimeout(doStop, 600);
-    return;
+    updateButtons(); setInstruction('Alle dobbelstenen gekozen!');
+    setTimeout(doStop, 600); return;
   }
   updateButtons();
   setInstruction('Gooi opnieuw of stop je beurt');
 }
 
-/* ═══════════════════════════════════════════════
-   STOP TURN
-═══════════════════════════════════════════════ */
+/* ── STOP ── */
 function doStop() {
   if (!locked.includes('W')) {
     showOverlay('🐛','Geen worm!','Je moet minstens één worm hebben.', fail);
@@ -714,7 +1007,6 @@ function doStop() {
   }
   const score = turnScore();
 
-  // Steal exact top-tile from another player
   for (let i = 0; i < players.length; i++) {
     if (i === currentPlayer) continue;
     const top = players[i].tiles[players[i].tiles.length - 1];
@@ -725,7 +1017,6 @@ function doStop() {
     }
   }
 
-  // Exact match on table
   if (tableTiles.includes(score)) {
     tableTiles = tableTiles.filter(t => t !== score);
     players[currentPlayer].tiles.push(score);
@@ -733,7 +1024,6 @@ function doStop() {
     return;
   }
 
-  // Highest lower tile
   const lower = tableTiles.filter(t => t < score);
   if (lower.length > 0) {
     const best = lower[lower.length - 1];
@@ -755,9 +1045,7 @@ function afterTake(msg) {
   }
 }
 
-/* ═══════════════════════════════════════════════
-   FAIL
-═══════════════════════════════════════════════ */
+/* ── FAIL ── */
 function fail() {
   const p = players[currentPlayer];
   let returned = null;
@@ -774,9 +1062,7 @@ function fail() {
   else { nextTurn(); }
 }
 
-/* ═══════════════════════════════════════════════
-   NEXT TURN
-═══════════════════════════════════════════════ */
+/* ── NEXT TURN ── */
 function nextTurn() {
   currentPlayer = (currentPlayer + 1) % players.length;
   resetTurn();
@@ -784,9 +1070,7 @@ function nextTurn() {
   updateAccessibility();
 }
 
-/* ═══════════════════════════════════════════════
-   OVERLAY
-═══════════════════════════════════════════════ */
+/* ── OVERLAY ── */
 let overlayCallback = null;
 function showOverlay(icon, title, text, cb) {
   document.getElementById('mIcon').textContent  = icon;
@@ -801,9 +1085,7 @@ function closeOverlay() {
   if (overlayCallback) { const fn = overlayCallback; overlayCallback = null; fn(); }
 }
 
-/* ═══════════════════════════════════════════════
-   RENDER
-═══════════════════════════════════════════════ */
+/* ── RENDER ── */
 function renderAll() {
   renderTiles();
   renderDiceArea();
@@ -889,9 +1171,7 @@ function updateButtons() {
   document.getElementById('btnStop').disabled = !(empty && hasAny);
 }
 
-/* ═══════════════════════════════════════════════
-   GAME OVER
-═══════════════════════════════════════════════ */
+/* ── GAME OVER ── */
 function renderGameOver() {
   const ranked = [...players]
     .map(p => ({ name: p.name, worms: pWorms(p), topTile: p.tiles.length ? p.tiles[p.tiles.length-1] : 0 }))
@@ -910,19 +1190,16 @@ function renderGameOver() {
   });
 }
 
-/* ═══════════════════════════════════════════════
-   MISC
-═══════════════════════════════════════════════ */
+/* ── MISC ── */
 function toggleSound() {
   soundEnabled = !soundEnabled;
   const btn = document.getElementById('soundBtn');
   btn.innerHTML = (soundEnabled ? '🔊 Geluid aan' : '🔇 Geluid uit') + '<div class="dwell-ring"></div>';
 }
 
-// Show/hide eye cursor based on whether current player uses eye tracking
 function updateAccessibility() {
-  const p        = players[currentPlayer];
-  const isEye    = eyeEnabled && p?.eyeTracking;
+  const p     = players[currentPlayer];
+  const isEye = eyeEnabled && p?.eyeTracking;
   document.getElementById('eyeCursor').style.display = isEye ? 'block' : 'none';
 }
 </script>

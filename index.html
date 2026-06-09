@@ -11,10 +11,7 @@
 @font-face{font-family:'Nunito';font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/nunito/v32/XRXV3I6Li01BKofIO-aBXso.woff2) format('woff2');}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#2c1810;background-image:radial-gradient(ellipse at top left,rgba(255,255,255,.06) 0%,transparent 55%),radial-gradient(ellipse at bottom right,rgba(0,0,0,.18) 0%,transparent 55%);}
-.screen{display:none;}
-.screen.active{display:block;}
-
-/* ── SETUP ── */
+.screen{display:none;} .screen.active{display:block;}
 #setup{max-width:560px;margin:0 auto;padding:2rem 1rem;text-align:center;}
 .logo-worm{font-size:3rem;line-height:1;}
 .logo{font-family:'Fredoka One',sans-serif;font-size:3.8rem;color:#f5b731;text-shadow:3px 4px 0 #c8901a;line-height:1;margin-bottom:.2rem;}
@@ -36,55 +33,68 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .btn-red{background:#e74c3c;color:#fff;box-shadow:0 4px 0 #a93226;}
 .big-btn:not(:disabled):hover{transform:translateY(-2px);}
 .big-btn:not(:disabled):active{transform:scale(.97);}
-.dwell-ring{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:conic-gradient(rgba(0,0,0,.85) 0deg,transparent 0deg);box-shadow:inset 0 0 0 3px rgba(0,0,0,.25),0 0 10px rgba(0,0,0,.25);opacity:1;}
+.dwell-ring{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:conic-gradient(rgba(0,0,0,.85) 0deg,transparent 0deg);box-shadow:inset 0 0 0 3px rgba(0,0,0,.25),0 0 10px rgba(0,0,0,.25);}
 .dwell-speed-block{margin-top:1.25rem;background:rgba(0,0,0,.25);border-radius:16px;padding:1rem 1.25rem;text-align:left;}
 .dwell-speed-header{font-size:.9rem;font-weight:700;color:#fff;margin-bottom:.4rem;}
 .speed-row{display:flex;gap:8px;flex-wrap:wrap;}
 .speed-btn{padding:4px 12px;border-radius:20px;border:2px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.65);font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;}
 .speed-btn.active{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.7);}
 
-/* ── CALIBRATION ── */
-#calibration{
-  position:fixed;inset:0;
-  background:rgba(8,24,14,.92);
-  z-index:1000;
-  display:none;flex-direction:column;align-items:center;
-  justify-content:flex-start;
-  padding-top:1.5rem;
-}
-#calibration.active{display:flex;}
-.cal-title{font-family:'Fredoka One',sans-serif;font-size:2rem;color:#f5b731;margin-bottom:.3rem;text-align:center;position:relative;z-index:1002;}
-.cal-sub{color:rgba(255,255,255,.75);font-size:.88rem;font-weight:700;margin-bottom:.6rem;text-align:center;max-width:480px;line-height:1.5;position:relative;z-index:1002;padding:0 1rem;}
-.cal-progress{font-family:'Fredoka One',sans-serif;font-size:1.3rem;color:#fff;background:rgba(0,0,0,.5);padding:6px 20px;border-radius:20px;margin-bottom:.6rem;position:relative;z-index:1002;}
-/* accuracy badge shown during phase 2 */
-.cal-accuracy{font-family:'Fredoka One',sans-serif;font-size:1rem;color:#2ecc71;background:rgba(0,0,0,.4);padding:4px 16px;border-radius:16px;margin-bottom:.5rem;position:relative;z-index:1002;display:none;}
+/* ══ CALIBRATION SCREEN ══ */
+#calScreen{position:fixed;inset:0;background:#050f09;z-index:2000;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:0;}
+#calScreen.active{display:flex;}
 
-/* Calibration dots */
+/* Full-screen dark backdrop so only the dot is visible — minimises distractions */
+#calBackdrop{position:absolute;inset:0;background:#050f09;}
+
+#calUI{position:relative;z-index:2002;display:flex;flex-direction:column;align-items:center;padding-top:1.4rem;gap:.45rem;pointer-events:none;}
+#calUI *{pointer-events:auto;}
+.cal-title{font-family:'Fredoka One',sans-serif;font-size:1.8rem;color:#f5b731;text-align:center;}
+.cal-sub{color:rgba(255,255,255,.72);font-size:.85rem;font-weight:700;text-align:center;max-width:460px;line-height:1.55;padding:0 1rem;}
+.cal-status-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.cal-badge{font-family:'Fredoka One',sans-serif;font-size:1rem;padding:5px 16px;border-radius:18px;background:rgba(0,0,0,.55);}
+#calProgress{color:#fff;}
+#calStability{color:#aaa;transition:color .3s;}
+#calStability.stable{color:#2ecc71;}
+#calAccBadge{display:none;color:#2ecc71;}
+#calCancelBtn{pointer-events:auto;}
+
+/* ── Calibration dot ── */
 .cal-dot{
-  position:fixed;
-  width:48px;height:48px;
+  position:fixed;z-index:2003;
   border-radius:50%;
-  background:#f5b731;
-  border:4px solid #fff;
   transform:translate(-50%,-50%);
-  cursor:pointer;
-  transition:transform .2s,background .2s,box-shadow .2s;
-  z-index:1003;
-  overflow:hidden;
+  pointer-events:none; /* clicks come from the overlay instead */
+  transition:opacity .25s;
 }
-.cal-dot.active{
-  background:#2ecc71;border-color:#fff;
-  transform:translate(-50%,-50%) scale(1.5);
-  animation:calPulse 1.1s infinite;
+/* Outer ring — helps fixation */
+.cal-dot .ring{
+  position:absolute;inset:-10px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.18);
 }
-.cal-dot.done{background:#3498db;border-color:#fff;opacity:.4;pointer-events:none;transform:translate(-50%,-50%) scale(.85);}
-.cal-dot .dwell-ring{border-radius:50%;}
-@keyframes calPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.8);}
-  50%    {box-shadow:0 0 0 22px rgba(46,204,113,0);}
+/* Main circle */
+.cal-dot .body{
+  width:44px;height:44px;border-radius:50%;
+  background:#f5b731;border:3px solid #fff;
+  position:relative;z-index:1;
+  transition:background .25s,transform .25s;
+}
+.cal-dot.active .body{background:#2ecc71;transform:scale(1.35);}
+.cal-dot.active .ring{border-color:rgba(46,204,113,.4);animation:calRingPulse 1.2s infinite;}
+.cal-dot.waiting .body{background:#e67e22;}  /* orange = waiting for stability */
+.cal-dot.done .body{background:#3498db;opacity:.35;transform:scale(.8);}
+/* Countdown arc drawn on a canvas inside the dot */
+.cal-dot canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+
+@keyframes calRingPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.5);}
+  50%{box-shadow:0 0 0 20px rgba(46,204,113,0);}
 }
 
-/* ── GAME ── */
+/* invisible full-screen click catcher during calibration */
+#calClickCatcher{position:fixed;inset:0;z-index:2001;cursor:crosshair;display:none;}
+
+/* ══ GAME ══ */
 #game{max-width:940px;margin:0 auto;padding:.75rem;display:flex;flex-direction:column;gap:.75rem;}
 .g-header{background:rgba(0,0,0,.35);border-radius:18px;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .gh-label{font-size:.72rem;color:rgba(255,255,255,.6);font-weight:700;}
@@ -105,7 +115,7 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .dice-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:100px;align-items:center;margin-bottom:12px;}
 .die{width:90px;height:90px;border-radius:18px;border:3px solid #e0d8c0;background:#fffde7;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',sans-serif;font-size:2.3rem;cursor:pointer;position:relative;overflow:hidden;user-select:none;transition:.12s;}
 .die:hover{transform:translateY(-5px);}
-.die.used{opacity:.6;filter:grayscale(1) brightness(.6);cursor:not-allowed;transform:none !important;box-shadow:none !important;}
+.die.used{opacity:.6;filter:grayscale(1) brightness(.6);cursor:not-allowed;transform:none !important;}
 .die.used::after{content:'✖';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;color:rgba(0,0,0,.4);font-weight:900;background:rgba(0,0,0,.15);border-radius:inherit;}
 .chosen-area{display:flex;flex-wrap:wrap;gap:8px;min-height:72px;align-items:center;background:rgba(46,204,113,.09);border:2px dashed rgba(46,204,113,.4);border-radius:14px;padding:8px;margin-bottom:12px;}
 .c-die{width:70px;height:70px;border-radius:12px;border:2px solid #2ecc71;background:#d4f5e3;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',sans-serif;font-size:1.9rem;}
@@ -119,7 +129,7 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .p-empty{color:rgba(255,255,255,.28);font-size:.78rem;font-weight:700;}
 .p-stack{color:rgba(255,255,255,.4);font-size:.72rem;font-weight:700;margin-top:3px;}
 
-/* ── OVERLAY ── */
+/* ══ OVERLAY ══ */
 #overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:200;}
 #overlay.show{display:flex;}
 .msg-box{background:#fdf6e3;border-radius:26px;padding:2rem 2.5rem;text-align:center;max-width:380px;width:90%;}
@@ -128,7 +138,7 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .msg-text{font-size:.95rem;color:#666;font-weight:700;line-height:1.5;margin-bottom:1.4rem;}
 .msg-ok{padding:14px 36px;border-radius:14px;border:none;font-family:'Fredoka One',sans-serif;font-size:1.25rem;background:#2ecc71;color:#fff;cursor:pointer;position:relative;overflow:hidden;}
 
-/* ── GAMEOVER ── */
+/* ══ GAMEOVER ══ */
 #gameover{max-width:560px;margin:0 auto;padding:2rem 1rem;text-align:center;}
 .go-title{font-family:'Fredoka One',sans-serif;font-size:3rem;color:#f5b731;margin-bottom:1.5rem;}
 .ranking{display:grid;gap:10px;margin-bottom:1.5rem;}
@@ -138,59 +148,42 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
 .rank-name{font-weight:800;font-size:1.1rem;flex:1;text-align:left;}
 .rank-worms{font-family:'Fredoka One',sans-serif;font-size:1.2rem;}
 
-/* ── RULES ── */
+/* ══ RULES ══ */
 #rules{max-width:700px;margin:0 auto;padding:2rem 1rem;}
 
-/* ── EYE CURSOR ── */
+/* ══ EYE CURSOR ══ */
 #eyeCursor{
-  position:fixed;
-  width:32px;height:32px;
-  border-radius:50%;
-  background:rgba(0,229,255,.25);
-  border:3px solid rgba(0,229,255,.85);
-  z-index:99999;
-  pointer-events:none;
-  transform:translate(-50%,-50%);
-  display:none;
-  box-shadow:0 0 14px rgba(0,229,255,.5), inset 0 0 8px rgba(0,229,255,.2);
-  /* NO CSS transition — we animate manually for lower latency */
+  position:fixed;width:30px;height:30px;border-radius:50%;
+  background:rgba(0,229,255,.18);border:2.5px solid rgba(0,229,255,.9);
+  z-index:99999;pointer-events:none;
+  transform:translate(-50%,-50%);display:none;
+  box-shadow:0 0 10px rgba(0,229,255,.4);
+  /* No CSS transition — we set position directly each frame */
 }
-/* Inner dot for precision */
-#eyeCursor::after{
-  content:'';
-  position:absolute;
-  width:6px;height:6px;
-  border-radius:50%;
-  background:#00e5ff;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-}
+#eyeCursor::after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:#00e5ff;top:50%;left:50%;transform:translate(-50%,-50%);}
 
-/* ── GAZE DEBUG PANEL (hidden by default) ── */
-#gazeDebug{
-  position:fixed;bottom:12px;right:12px;
-  background:rgba(0,0,0,.75);color:#0f0;
-  font-family:monospace;font-size:11px;
-  padding:8px 12px;border-radius:10px;
-  z-index:99998;line-height:1.6;
-  display:none;
-  pointer-events:none;
+/* ══ DEBUG PANEL ══ */
+#dbg{
+  position:fixed;bottom:10px;right:10px;z-index:99998;
+  background:rgba(0,0,0,.82);color:#0f0;
+  font:11px/1.7 monospace;padding:8px 12px;border-radius:10px;
+  pointer-events:none;display:none;min-width:220px;
 }
+#dbg .dbg-warn{color:#f90;}
+#dbg .dbg-err{color:#f44;}
 
-/* ── ANIMATIONS ── */
+/* ══ ANIMATIONS ══ */
 @keyframes rollAnim{0%{transform:rotate(0) scale(1)}20%{transform:rotate(-14deg) scale(1.12)}50%{transform:rotate(10deg) scale(1.08)}80%{transform:rotate(-5deg) scale(1.1)}100%{transform:rotate(0) scale(1)}}
 .die.rolling{animation:rollAnim .45s ease;}
-
-/* Hide WebGazer's built-in video/overlay */
 #webgazerVideoContainer,#webgazerFaceOverlay,#webgazerFaceFeedbackBox,#webgazerVideoFeed{display:none !important;}
 </style>
 </head>
 <body>
 
 <div id="eyeCursor"></div>
-<div id="gazeDebug"></div>
+<div id="dbg"></div>
 
-<!-- ══════════ SETUP ══════════ -->
+<!-- ══ SETUP ══ -->
 <div id="setup" class="screen active">
   <div class="logo-worm">🐛</div>
   <div class="logo">Regenwormen</div>
@@ -200,91 +193,59 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
     <div class="count-row" id="countRow"></div>
     <label class="field-label">Namen</label>
     <div class="name-inputs" id="nameInputs"></div>
-
-    <button class="big-btn btn-green" id="btnStart" onclick="startGame()">
-      🐛 Spel starten! <div class="dwell-ring"></div>
-    </button>
-    <br>
-    <button class="big-btn btn-blue" id="btnEye" onclick="openCalibration()">
-      👁️ Eye tracking kalibreren <div class="dwell-ring"></div>
-    </button>
-    <br>
-    <button class="big-btn btn-yellow" id="soundBtn" onclick="toggleSound()">
-      🔊 Geluid aan <div class="dwell-ring"></div>
-    </button>
-    <br>
-    <button class="big-btn btn-orange" onclick="showScreen('rules')">
-      📜 Spelregels <div class="dwell-ring"></div>
-    </button>
-
+    <button class="big-btn btn-green" id="btnStart" onclick="startGame()">🐛 Spel starten! <div class="dwell-ring"></div></button><br>
+    <button class="big-btn btn-blue"  id="btnEye"   onclick="openCalibration()">👁️ Eye tracking kalibreren <div class="dwell-ring"></div></button><br>
+    <button class="big-btn btn-yellow" id="soundBtn" onclick="toggleSound()">🔊 Geluid aan <div class="dwell-ring"></div></button><br>
+    <button class="big-btn btn-orange" onclick="showScreen('rules')">📜 Spelregels <div class="dwell-ring"></div></button>
     <div class="dwell-speed-block" id="dwellSpeedBlock" style="display:none;">
       <div class="dwell-speed-header">⏱️ Dwell snelheid</div>
       <div class="speed-row">
-        <button class="speed-btn" data-ms="2500" onclick="setSpeed(this)">Lang (2,5s)</button>
-        <button class="speed-btn active" data-ms="1500" onclick="setSpeed(this)">Normaal (1,5s)</button>
-        <button class="speed-btn" data-ms="800" onclick="setSpeed(this)">Kort (0,8s)</button>
+        <button class="speed-btn" data-ms="2500" onclick="setDwellSpeed(this)">Lang (2,5s)</button>
+        <button class="speed-btn active" data-ms="1500" onclick="setDwellSpeed(this)">Normaal (1,5s)</button>
+        <button class="speed-btn" data-ms="800"  onclick="setDwellSpeed(this)">Kort (0,8s)</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════ CALIBRATION ══════════ -->
-<div id="calibration" class="screen">
-  <div class="cal-title">👁️ Eye tracking kalibratie</div>
-  <div class="cal-sub" id="calSubText">
-    Fase 1: Klik op elk groen punt terwijl je ernaar kijkt.<br>
-    Houd je hoofd stil en kijk recht naar het punt voor je klikt.
+<!-- ══ CALIBRATION SCREEN ══ -->
+<div id="calScreen" class="screen">
+  <div id="calBackdrop"></div>
+  <div id="calUI">
+    <div class="cal-title">👁️ Eye tracking kalibratie</div>
+    <div class="cal-sub" id="calSub">Kijk naar het gekleurde punt en klik erop (of wacht tot het automatisch geregistreerd wordt).<br>Houd je hoofd stil en kijk recht naar het middelpunt van het punt.</div>
+    <div class="cal-status-row">
+      <div class="cal-badge" id="calProgress">Punt 1 van 13</div>
+      <div class="cal-badge" id="calStability">⏳ Stabiliseren…</div>
+      <div class="cal-badge" id="calAccBadge">Nauwkeurigheid: —</div>
+    </div>
+    <button class="big-btn btn-red" style="max-width:240px;margin-top:.3rem;" onclick="cancelCalibration()">✖ Annuleren <div class="dwell-ring"></div></button>
   </div>
-  <div class="cal-progress" id="calProgress">Punt 1 van 16</div>
-  <div class="cal-accuracy" id="calAccuracy">Nauwkeurigheid: —</div>
-  <button class="big-btn btn-red" style="max-width:260px;" onclick="cancelCalibration()" id="calCancelBtn">
-    ✖ Annuleren <div class="dwell-ring"></div>
-  </button>
+  <!-- dots injected here by JS -->
 </div>
+<div id="calClickCatcher" onclick="onCalClick()"></div>
 
-<div id="calGrid"></div>
-
-<!-- ══════════ RULES ══════════ -->
+<!-- ══ RULES ══ -->
 <div id="rules" class="screen">
   <div class="card" style="margin-bottom:1rem;">
     <div class="logo" style="font-size:2.4rem;margin-bottom:1rem;">📜 Spelregels</div>
     <div style="text-align:left;line-height:1.7;">
-      <h3>Doel</h3>
-      Verzamel zoveel mogelijk regenwormen op tegels. De speler met de meeste wormen wint.
-      <br><br>
-      <h3>Beurt</h3>
-      Gooi alle 8 dobbelstenen. Kies één symbool (alle dobbelstenen met dat symbool gaan apart). Een regenworm telt als 5 punten. Herhaal totdat je stopt of vastloopt.
-      <br><br>
-      <h3>Tegel pakken</h3>
-      Je moet minstens één worm hebben. Je pakt de tegel met jouw score, of de hoogste lagere tegel.
-      <br><br>
-      <h3>Stelen</h3>
-      Gooi je exact het getal van de bovenste tegel van een tegenstander? Dan steel je die tegel.
-      <br><br>
-      <h3>Mislukt</h3>
-      Geen nieuwe symbolen meer, geen worm, of geen tegel beschikbaar → beurt mislukt. Je geeft je bovenste tegel terug en de hoogste open tegel verdwijnt.
+      <h3>Doel</h3> Verzamel zoveel mogelijk regenwormen op tegels. De speler met de meeste wormen wint.<br><br>
+      <h3>Beurt</h3> Gooi alle 8 dobbelstenen. Kies één symbool. Een regenworm telt als 5 punten. Herhaal totdat je stopt of vastloopt.<br><br>
+      <h3>Tegel pakken</h3> Je moet minstens één worm hebben. Je pakt de tegel met jouw score, of de hoogste lagere tegel.<br><br>
+      <h3>Stelen</h3> Gooi je exact het getal van de bovenste tegel van een tegenstander? Dan steel je die tegel.<br><br>
+      <h3>Mislukt</h3> Geen nieuwe symbolen, geen worm, of geen tegel → beurt mislukt. Je geeft je bovenste tegel terug en de hoogste open tegel verdwijnt.
     </div>
   </div>
-  <button class="big-btn btn-green" onclick="showScreen('setup')">
-    ⬅ Terug <div class="dwell-ring"></div>
-  </button>
+  <button class="big-btn btn-green" onclick="showScreen('setup')">⬅ Terug <div class="dwell-ring"></div></button>
 </div>
 
-<!-- ══════════ GAME ══════════ -->
+<!-- ══ GAME ══ -->
 <div id="game" class="screen">
   <div class="g-header">
-    <div>
-      <div class="gh-label">Aan de beurt</div>
-      <div class="gh-name" id="hName">—</div>
-    </div>
-    <div class="gh-mid">
-      <div class="gh-score" id="hScore">0</div>
-      <div class="gh-label">Beurt totaal</div>
-    </div>
-    <div class="gh-right">
-      <div class="gh-label">Jouw wormen</div>
-      <div id="hWorms">🐛 0</div>
-    </div>
+    <div><div class="gh-label">Aan de beurt</div><div class="gh-name" id="hName">—</div></div>
+    <div class="gh-mid"><div class="gh-score" id="hScore">0</div><div class="gh-label">Beurt totaal</div></div>
+    <div class="gh-right"><div class="gh-label">Jouw wormen</div><div id="hWorms">🐛 0</div></div>
   </div>
   <div class="g-section">
     <div class="sec-label">Tegels op tafel — klik om te pakken</div>
@@ -297,554 +258,656 @@ body{font-family:'Nunito',sans-serif;background:#2a5c38;min-height:100vh;color:#
     <div class="sec-label-dark">Opzijgelegd</div>
     <div class="chosen-area" id="chosenArea"></div>
     <div class="action-row">
-      <button class="big-btn btn-blue" id="btnRoll" onclick="doRoll()">
-        🎲 Gooi! <div class="dwell-ring"></div>
-      </button>
-      <button class="big-btn btn-orange" id="btnStop" onclick="doStop()" disabled>
-        🛑 Stop beurt <div class="dwell-ring"></div>
-      </button>
+      <button class="big-btn btn-blue"   id="btnRoll" onclick="doRoll()">🎲 Gooi! <div class="dwell-ring"></div></button>
+      <button class="big-btn btn-orange" id="btnStop" onclick="doStop()" disabled>🛑 Stop beurt <div class="dwell-ring"></div></button>
     </div>
   </div>
   <div class="players-grid" id="playersGrid"></div>
 </div>
 
-<!-- ══════════ GAME OVER ══════════ -->
+<!-- ══ GAMEOVER ══ -->
 <div id="gameover" class="screen">
   <div class="go-title">🏆 Einde spel!</div>
   <div class="ranking" id="rankingList"></div>
-  <button class="big-btn btn-green" onclick="resetGame()">
-    🔄 Opnieuw spelen <div class="dwell-ring"></div>
-  </button>
+  <button class="big-btn btn-green" onclick="resetGame()">🔄 Opnieuw spelen <div class="dwell-ring"></div></button>
 </div>
 
-<!-- ══════════ OVERLAY ══════════ -->
+<!-- ══ OVERLAY ══ -->
 <div id="overlay">
   <div class="msg-box">
-    <div class="msg-icon" id="mIcon">😢</div>
+    <div class="msg-icon"  id="mIcon">😢</div>
     <div class="msg-title" id="mTitle">—</div>
-    <div class="msg-text" id="mText"></div>
-    <button class="msg-ok" id="mBtn" onclick="closeOverlay()">
-      OK <div class="dwell-ring"></div>
-    </button>
+    <div class="msg-text"  id="mText"></div>
+    <button class="msg-ok" id="mBtn" onclick="closeOverlay()">OK <div class="dwell-ring"></div></button>
   </div>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   ██████  EYE TRACKING ENGINE  ██████
-   
-   Architecture:
-   1. GazeFilter     — multi-stage noise reduction pipeline
-   2. CalibrationMap — 16-point bilinear warp + drift correction
-   3. DwellManager   — stable dwell detection with hysteresis
-   4. WebGazer glue  — connects raw predictions to the pipeline
-═══════════════════════════════════════════════════════════════ */
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════
+ *  EYE TRACKING ENGINE — complete rewrite
+ *
+ *  Pipeline:
+ *    WebGazer raw  →  KalmanFilter1D (x,y)  →  OutlierGate
+ *      →  FixationDetector  →  CalibrationMapper (polyfit)
+ *      →  cursor + DwellController
+ *
+ *  Calibration flow:
+ *    For each of 13 points (9 training + 4 verification):
+ *      1. Show dot, wait CAL_SETTLE_MS for user to fixate
+ *      2. Collect CAL_SAMPLE_COUNT gaze samples
+ *      3. Reject outliers (IQR filter), compute trimmed mean
+ *      4. On click OR auto-trigger when enough stable samples
+ * ═══════════════════════════════════════════════════════════════════ */
 
-/* ── 1. GAZE FILTER ─────────────────────────────────────────
-   Pipeline: raw → median buffer → exponential smoothing → velocity gate
-   ─────────────────────────────────────────────────────────── */
-const GazeFilter = (() => {
-  const MEDIAN_WIN  = 7;    // size of median window (odd)
-  const EMA_FAST    = 0.30; // fast EMA for responsive tracking
-  const EMA_SLOW    = 0.10; // slow EMA for steady state
-  const VEL_THRESH  = 280;  // px/s — above this, use fast EMA
-  const JITTER_ZONE = 12;   // px — micro-jitter suppression radius
+/* ────────────────────────────────────────────────────────────────
+ * 1. 1-D KALMAN FILTER
+ *    Models eye position as a slowly-drifting variable.
+ *    process noise Q: how much the true position can jump per frame
+ *    measurement noise R: how noisy the sensor reading is
+ * ─────────────────────────────────────────────────────────────── */
+class Kalman1D {
+  constructor(Q = 0.005, R = 40) {
+    this.Q = Q;   // process noise — smaller = smoother but more lag
+    this.R = R;   // measurement noise — larger = smoother
+    this.x = null; // state estimate
+    this.P = 1;    // estimate covariance
+  }
+  update(z) {
+    if (z === null || isNaN(z)) return this.x;
+    if (this.x === null) { this.x = z; return z; }
+    // Predict
+    const P_pred = this.P + this.Q;
+    // Update
+    const K = P_pred / (P_pred + this.R);
+    this.x = this.x + K * (z - this.x);
+    this.P = (1 - K) * P_pred;
+    return this.x;
+  }
+  reset() { this.x = null; this.P = 1; }
+}
 
-  let bufX = [], bufY = [];
-  let smoothX = null, smoothY = null;
+/* ────────────────────────────────────────────────────────────────
+ * 2. OUTLIER GATE
+ *    Maintains a rolling window; rejects any sample that deviates
+ *    more than SIGMA_THRESH standard deviations from the window mean.
+ *    Also rejects samples that jump more than MAX_JUMP_PX in one frame.
+ * ─────────────────────────────────────────────────────────────── */
+const OutlierGate = (() => {
+  const WIN       = 12;        // rolling window size
+  const SIGMA     = 2.2;       // reject if > 2.2 σ from mean
+  const MAX_JUMP  = 380;       // px — impossible eye movement in one frame
+  let bx = [], by = [];
   let lastX = null, lastY = null;
-  let lastT = null;
+  let rejectedCount = 0, totalCount = 0;
 
-  // Centre of last intentional gaze — resets on large moves
-  let anchorX = null, anchorY = null;
-
-  function median(arr) {
-    const s = [...arr].sort((a,b)=>a-b);
-    const m = Math.floor(s.length/2);
-    return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
-  }
-
-  function push(rx, ry) {
-    if (rx == null || ry == null || isNaN(rx) || isNaN(ry)) return null;
-
-    // Median buffer
-    bufX.push(rx); bufY.push(ry);
-    if (bufX.length > MEDIAN_WIN) { bufX.shift(); bufY.shift(); }
-    const mx = median(bufX), my = median(bufY);
-
-    const now = performance.now();
-
-    // Bootstrap
-    if (smoothX === null) {
-      smoothX = mx; smoothY = my;
-      anchorX = mx; anchorY = my;
-      lastX = mx; lastY = my; lastT = now;
-      return { x: smoothX, y: smoothY };
+  function check(x, y) {
+    totalCount++;
+    // Jump gate — catches WebGazer glitches where it returns screen-edge coords
+    if (lastX !== null) {
+      const jump = Math.hypot(x - lastX, y - lastY);
+      if (jump > MAX_JUMP) { rejectedCount++; return false; }
     }
-
-    // Velocity-adaptive EMA
-    const dt   = Math.max(1, now - lastT) / 1000;
-    const dist = Math.hypot(mx - lastX, my - lastY);
-    const vel  = dist / dt;
-    lastX = mx; lastY = my; lastT = now;
-
-    const alpha = vel > VEL_THRESH ? EMA_FAST : EMA_SLOW;
-    smoothX = smoothX + alpha * (mx - smoothX);
-    smoothY = smoothY + alpha * (my - smoothY);
-
-    // Micro-jitter suppression: if within dead zone of anchor, snap back
-    const dAnchor = Math.hypot(smoothX - anchorX, smoothY - anchorY);
-    if (dAnchor < JITTER_ZONE) {
-      smoothX = anchorX + (smoothX - anchorX) * 0.4;
-      smoothY = anchorY + (smoothY - anchorY) * 0.4;
-    } else {
-      // New intentional position — update anchor
-      anchorX = smoothX; anchorY = smoothY;
+    // Sigma gate
+    if (bx.length >= 4) {
+      const mx = bx.reduce((a,b)=>a+b)/bx.length;
+      const my = by.reduce((a,b)=>a+b)/by.length;
+      const sx = Math.sqrt(bx.reduce((a,b)=>a+(b-mx)**2,0)/bx.length) || 1;
+      const sy = Math.sqrt(by.reduce((a,b)=>a+(b-my)**2,0)/by.length) || 1;
+      if (Math.abs(x-mx)/sx > SIGMA || Math.abs(y-my)/sy > SIGMA) {
+        rejectedCount++;
+        return false;
+      }
     }
-
-    return { x: smoothX, y: smoothY };
+    bx.push(x); by.push(y);
+    if (bx.length > WIN) { bx.shift(); by.shift(); }
+    lastX = x; lastY = y;
+    return true;
   }
+  function reset() { bx=[]; by=[]; lastX=null; lastY=null; }
+  function rejectRate() { return totalCount ? rejectedCount/totalCount : 0; }
+  return { check, reset, rejectRate };
+})();
 
-  function reset() {
-    bufX=[]; bufY=[];
-    smoothX=null; smoothY=null;
-    lastX=null; lastY=null; lastT=null;
-    anchorX=null; anchorY=null;
+/* ────────────────────────────────────────────────────────────────
+ * 3. FIXATION DETECTOR
+ *    Tracks whether the gaze is in a stable fixation.
+ *    Uses a dispersion threshold: a fixation is declared when the
+ *    last N samples span less than DISP_PX in both axes.
+ * ─────────────────────────────────────────────────────────────── */
+const FixationDetector = (() => {
+  const WIN     = 8;    // samples to consider
+  const DISP_PX = 55;   // max dispersion in px to count as fixation
+  let bx = [], by = [];
+
+  function push(x, y) {
+    bx.push(x); by.push(y);
+    if (bx.length > WIN) { bx.shift(); by.shift(); }
+    if (bx.length < 4) return { fixating: false, cx: x, cy: y, dispersion: 999 };
+    const minX = Math.min(...bx), maxX = Math.max(...bx);
+    const minY = Math.min(...by), maxY = Math.max(...by);
+    const disp = Math.max(maxX - minX, maxY - minY);
+    const cx   = bx.reduce((a,b)=>a+b)/bx.length;
+    const cy   = by.reduce((a,b)=>a+b)/by.length;
+    return { fixating: disp < DISP_PX, cx, cy, dispersion: disp };
   }
-
+  function reset() { bx = []; by = []; }
   return { push, reset };
 })();
 
+/* ────────────────────────────────────────────────────────────────
+ * 4. CALIBRATION MAPPER
+ *    Fits a 2D polynomial (degree-1 with cross term, i.e. affine)
+ *    from raw-gaze space → screen space.
+ *
+ *    Model: sx = a0 + a1*gx + a2*gy
+ *           sy = b0 + b1*gx + b2*gy
+ *
+ *    Solved via least-squares over all calibration points.
+ *    With ≥ 3 points this gives an exact or over-determined system.
+ * ─────────────────────────────────────────────────────────────── */
+const CalibrationMapper = (() => {
+  let pts    = [];   // {gx, gy, sx, sy}
+  let coeffA = null; // [a0, a1, a2]
+  let coeffB = null; // [b0, b1, b2]
+  let fitted = false;
 
-/* ── 2. CALIBRATION MAP ─────────────────────────────────────
-   Stores 16 reference points. On each click we collect multiple
-   gaze samples and average them. We then compute a per-point
-   offset. At runtime, correction = weighted average of nearby points.
-   Also includes online drift correction.
-   ─────────────────────────────────────────────────────────── */
-const CalibrationMap = (() => {
-  let points = []; // { sx, sy, gx, gy }  screen vs gaze coords
-
-  // Collect raw samples during calibration (called continuously)
-  let samplesX = [], samplesY = [];
-
-  function startSample() { samplesX = []; samplesY = []; }
-
-  function addSample(gx, gy) {
-    if (gx != null && !isNaN(gx)) { samplesX.push(gx); samplesY.push(gy); }
-  }
-
-  function commitPoint(sx, sy) {
-    if (samplesX.length < 3) return false;
-    // Trimmed mean: drop lowest/highest 25%
-    function trimMean(arr) {
-      const s = [...arr].sort((a,b)=>a-b);
-      const trim = Math.floor(s.length * 0.25);
-      const trimmed = s.slice(trim, s.length - trim);
-      return trimmed.reduce((a,b)=>a+b,0) / trimmed.length;
-    }
-    const gx = trimMean(samplesX), gy = trimMean(samplesY);
-    points.push({ sx, sy, gx, gy });
-    return true;
-  }
-
-  // Inverse distance weighted correction
-  // Given a raw gaze point, return the corrected screen point
-  function correct(rawX, rawY) {
-    if (points.length === 0) return { x: rawX, y: rawY };
-
-    // IDW with p=2
-    let wSum = 0, cx = 0, cy = 0;
-    points.forEach(p => {
-      // offset: what to add to raw gaze to get screen coord
-      const offX = p.sx - p.gx;
-      const offY = p.sy - p.gy;
-      const dist = Math.max(1, Math.hypot(rawX - p.gx, rawY - p.gy));
-      const w    = 1 / (dist * dist);
-      wSum += w;
-      cx   += w * (rawX + offX);
-      cy   += w * (rawY + offY);
+  // Least-squares solution for Ax = b using normal equations
+  // A is n×3, b is n×1
+  function leastSquares(rows, rhs) {
+    // AtA = A^T * A  (3×3),  Atb = A^T * b  (3×1)
+    const AtA = [[0,0,0],[0,0,0],[0,0,0]];
+    const Atb = [0,0,0];
+    rows.forEach((r, i) => {
+      for (let j=0;j<3;j++) {
+        Atb[j] += r[j] * rhs[i];
+        for (let k=0;k<3;k++) AtA[j][k] += r[j]*r[k];
+      }
     });
-
-    return { x: cx / wSum, y: cy / wSum };
+    // Solve 3×3 system via Cramer / Gaussian elimination
+    return gauss3(AtA, Atb);
   }
 
-  // Online drift correction: if we get a reliable fixation near a button
-  // the user clicked, we add that as a soft calibration point
-  function onConfirmedGaze(screenX, screenY, gazeX, gazeY) {
-    // Only add if error is meaningful (> 20px) but not crazy (< 200px)
-    const err = Math.hypot(screenX - gazeX, screenY - gazeY);
-    if (err < 20 || err > 200) return;
-    // Add with reduced weight — keep max 8 drift points by overwriting oldest
-    points.push({ sx: screenX, sy: screenY, gx: gazeX, gy: gazeY, drift: true });
-    // Trim drift points to avoid overloading IDW
-    const driftPts = points.filter(p => p.drift);
-    if (driftPts.length > 8) {
-      const idx = points.indexOf(driftPts[0]);
-      points.splice(idx, 1);
+  function gauss3(M, b) {
+    // Augmented matrix [M|b]
+    const A = M.map((r,i) => [...r, b[i]]);
+    for (let col=0;col<3;col++) {
+      // Pivot
+      let maxR = col;
+      for (let r=col+1;r<3;r++) if (Math.abs(A[r][col]) > Math.abs(A[maxR][col])) maxR = r;
+      [A[col], A[maxR]] = [A[maxR], A[col]];
+      if (Math.abs(A[col][col]) < 1e-12) return null; // singular
+      for (let r=0;r<3;r++) {
+        if (r === col) continue;
+        const f = A[r][col] / A[col][col];
+        for (let c=col;c<=3;c++) A[r][c] -= f * A[col][c];
+      }
     }
+    return A.map((r,i) => r[3]/r[i]);
   }
 
-  function clear() { points = []; }
-  function count() { return points.length; }
+  function refit() {
+    if (pts.length < 3) { fitted = false; return; }
+    const rows = pts.map(p => [1, p.gx, p.gy]);
+    coeffA = leastSquares(rows, pts.map(p => p.sx));
+    coeffB = leastSquares(rows, pts.map(p => p.sy));
+    fitted = coeffA !== null && coeffB !== null;
+  }
 
-  return { startSample, addSample, commitPoint, correct, onConfirmedGaze, clear, count };
+  function addPoint(gx, gy, sx, sy) {
+    pts.push({ gx, gy, sx, sy });
+    refit();
+  }
+
+  function map(gx, gy) {
+    if (!fitted) return { x: gx, y: gy };
+    const x = coeffA[0] + coeffA[1]*gx + coeffA[2]*gy;
+    const y = coeffB[0] + coeffB[1]*gx + coeffB[2]*gy;
+    return { x, y };
+  }
+
+  function clear() { pts=[]; coeffA=null; coeffB=null; fitted=false; }
+  function count() { return pts.length; }
+  function isFitted() { return fitted; }
+
+  // Compute residual error on training points
+  function rmse() {
+    if (!fitted || pts.length === 0) return 999;
+    const errs = pts.map(p => {
+      const m = map(p.gx, p.gy);
+      return Math.hypot(m.x - p.sx, m.y - p.sy);
+    });
+    return Math.sqrt(errs.reduce((a,b)=>a+b*b,0)/errs.length);
+  }
+
+  return { addPoint, map, clear, count, isFitted, rmse };
 })();
 
+/* ────────────────────────────────────────────────────────────────
+ * 5. DWELL CONTROLLER
+ *    Tracks gaze on interactive elements with hysteresis:
+ *    - enter zone → start timer
+ *    - stay in padded hit area → continue timer
+ *    - leave padded area → reset timer (NOT on small wobble inside pad)
+ * ─────────────────────────────────────────────────────────────── */
+const DwellCtrl = (() => {
+  const PAD = 30; // extra px around element bbox
+  let el = null, t0 = 0;
 
-/* ── 3. DWELL MANAGER ───────────────────────────────────────
-   Hysteresis-based dwell: uses a "dwell zone" radius so tiny
-   wobbles within the zone don't reset the timer.
-   ─────────────────────────────────────────────────────────── */
-const DwellManager = (() => {
-  const DWELL_RADIUS = 50; // px radius — staying within this counts as same target
+  function update(x, y, durationMs) {
+    if (!eyeTrackingActive()) { _clear(); return; }
+    const hit = _hitTest(x, y);
+    if (hit !== el) { _clear(); el = hit; t0 = performance.now(); }
+    if (!el) return;
+    const prog = Math.min((performance.now() - t0) / durationMs, 1);
+    const ring = el.querySelector('.dwell-ring');
+    if (ring) ring.style.background = `conic-gradient(rgba(255,255,255,.6) ${prog*360}deg,transparent 0deg)`;
+    if (prog >= 1) { const t = el; _clear(); t.click(); }
+  }
 
-  let curEl       = null;
-  let startTime   = 0;
-  let dwellX      = 0, dwellY = 0; // centre of current dwell zone
-  let rafId       = null;
-  let cbMap       = new WeakMap();
-
-  function register(el, cb) { cbMap.set(el, cb); }
-
-  function update(gx, gy, duration) {
-    if (!isDwellActive()) { _clearDwell(); return; }
-
-    const cands = document.querySelectorAll(
-      '.big-btn:not(:disabled), .die:not(.used), .msg-ok, .tile, .cal-dot.active'
-    );
+  function _hitTest(x, y) {
+    const sels = '.big-btn:not(:disabled),.die:not(.used),.msg-ok,.tile';
     let hit = null;
-    cands.forEach(el => {
-      const r = el.getBoundingClientRect();
-      if (gx >= r.left && gx <= r.right && gy >= r.top && gy <= r.bottom) hit = el;
+    document.querySelectorAll(sels).forEach(e => {
+      const r = e.getBoundingClientRect();
+      if (x >= r.left-PAD && x <= r.right+PAD && y >= r.top-PAD && y <= r.bottom+PAD) hit = e;
     });
-
-    if (!hit) { _clearDwell(); return; }
-
-    // Check if still within dwell zone of current target
-    const distFromZone = Math.hypot(gx - dwellX, gy - dwellY);
-    const sameTarget   = hit === curEl;
-
-    if (!sameTarget || distFromZone > DWELL_RADIUS) {
-      // New target or moved far — reset only if genuinely new element
-      if (!sameTarget) {
-        _clearDwell();
-        curEl     = hit;
-        startTime = performance.now();
-        dwellX    = gx; dwellY = gy;
-      }
-      // Same target but drifted — update zone centre gently
-      else {
-        dwellX = dwellX + 0.15 * (gx - dwellX);
-        dwellY = dwellY + 0.15 * (gy - dwellY);
-      }
-    }
-
-    if (!curEl) return;
-
-    const progress = Math.min((performance.now() - startTime) / duration, 1);
-    const ring = curEl.querySelector('.dwell-ring');
-    if (ring) {
-      ring.style.background =
-        `conic-gradient(rgba(255,255,255,.6) ${progress*360}deg, transparent 0deg)`;
-    }
-
-    if (progress >= 1) {
-      const target = curEl;
-      _clearDwell();
-      target.click();
-    }
+    return hit;
   }
 
-  function _clearDwell() {
-    if (curEl) {
-      const ring = curEl.querySelector('.dwell-ring');
-      if (ring) ring.style.background = '';
-    }
-    curEl = null; startTime = 0;
+  function _clear() {
+    if (el) { const r = el.querySelector('.dwell-ring'); if(r) r.style.background=''; }
+    el = null; t0 = 0;
   }
 
-  return { register, update };
+  return { update };
 })();
 
+/* ────────────────────────────────────────────────────────────────
+ * 6. MAIN EYE TRACKING GLUE
+ * ─────────────────────────────────────────────────────────────── */
+const kalX = new Kalman1D(0.008, 35);
+const kalY = new Kalman1D(0.008, 35);
 
-/* ── 4. WEBGAZER INTEGRATION ────────────────────────────────
-   Raw predictions → GazeFilter → CalibrationMap → cursor + dwell
-   ─────────────────────────────────────────────────────────── */
-let eyeEnabled = false;
+let eyeEnabled   = false;
+let curGazeRawX  = 0, curGazeRawY  = 0; // post-kalman, pre-calibration
+let curGazeMappedX = 0, curGazeMappedY = 0; // post-calibration
 
-// Track whether we're currently collecting calibration samples
-let calCollecting = false;
-
-// Latest corrected gaze position (used by DwellManager tick)
-let curGazeX = 0, curGazeY = 0;
+let dwellDuration = 1500;
+let debugOn = false;
+let frameCount = 0, lastFps = 0, fpsT = performance.now();
 
 function initWebGazer() {
   webgazer
-    .setRegression('ridge')       // most accurate regression model in WebGazer
-    .setGazeListener((data) => {
-      if (!data) return;
-
-      // Stage 1: median + EMA filter
-      const filtered = GazeFilter.push(data.x, data.y);
-      if (!filtered) return;
-
-      // Stage 2: calibration map correction
-      const corrected = CalibrationMap.correct(filtered.x, filtered.y);
-
-      curGazeX = corrected.x;
-      curGazeY = corrected.y;
-
-      // Accumulate calibration samples if active
-      if (calCollecting) CalibrationMap.addSample(filtered.x, filtered.y);
-
-      // Update cursor position (direct DOM write — no CSS transition latency)
-      const cursor = document.getElementById('eyeCursor');
-      if (cursor.style.display !== 'none') {
-        cursor.style.left = corrected.x + 'px';
-        cursor.style.top  = corrected.y + 'px';
-      }
-
-      // Debug overlay
-      if (debugVisible) updateDebug(data.x, data.y, filtered.x, filtered.y, corrected.x, corrected.y);
-    })
+    .setRegression('ridge')
+    .setGazeListener(onRawGaze)
     .saveDataAcrossSessions(false)
     .begin();
 
-  // Kill WebGazer's own UI
-  const killUI = () => {
-    ['webgazerVideoContainer','webgazerFaceOverlay','webgazerFaceFeedbackBox','webgazerVideoFeed']
-      .forEach(id => { const el = document.getElementById(id); if(el) el.style.cssText='display:none!important'; });
-  };
-  killUI();
-  setTimeout(killUI, 500);
-  setTimeout(killUI, 1500);
+  // Kill WebGazer UI — retry several times because it injects asynchronously
+  [0, 400, 1000, 2000].forEach(d => setTimeout(killWGUI, d));
 
-  // Dwell loop: runs on rAF for smooth dwell progress
-  let dwellDuration_ref = () => dwellDuration;
-  const tick = () => {
-    DwellManager.update(curGazeX, curGazeY, dwellDuration);
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+  // rAF loop for dwell + debug
+  (function loop() {
+    DwellCtrl.update(curGazeMappedX, curGazeMappedY, dwellDuration);
+    if (debugOn) updateDebugPanel();
+    requestAnimationFrame(loop);
+  })();
 }
 
-/* ── DEBUG PANEL ── */
-let debugVisible = false;
-function updateDebug(rx, ry, fx, fy, cx, cy) {
-  document.getElementById('gazeDebug').innerHTML =
-    `RAW  ${Math.round(rx)},${Math.round(ry)}<br>` +
-    `FILT ${Math.round(fx)},${Math.round(fy)}<br>` +
-    `CORR ${Math.round(cx)},${Math.round(cy)}<br>` +
-    `CPTS ${CalibrationMap.count()}`;
-}
-// Press D to toggle debug panel
-document.addEventListener('keydown', e => {
-  if (e.key === 'd' || e.key === 'D') {
-    debugVisible = !debugVisible;
-    document.getElementById('gazeDebug').style.display = debugVisible ? 'block' : 'none';
+function onRawGaze(data) {
+  if (!data || data.x == null) return;
+
+  // ① Outlier gate — drop impossible jumps and σ-outliers
+  if (!OutlierGate.check(data.x, data.y)) return;
+
+  // ② Kalman filter — smooth remaining noise
+  const kx = kalX.update(data.x);
+  const ky = kalY.update(data.y);
+
+  curGazeRawX = kx; curGazeRawY = ky;
+
+  // ③ Fixation detector — feeds calibration sample collector
+  const fix = FixationDetector.push(kx, ky);
+
+  // ④ Update calibration sample collector if active
+  if (calState.collecting && fix.fixating) {
+    // Only accept samples near the current dot (spatial gate)
+    const dot = calState.currentDot;
+    if (dot) {
+      const dist = Math.hypot(kx - dot.sx, ky - dot.sy);
+      // Gate: within 200px of the screen target (raw gaze offset is usually < 180px)
+      if (dist < 220) {
+        calState.samples.push({ x: kx, y: ky });
+        updateCalUI(fix);
+      }
+    }
   }
-});
 
+  // ⑤ Map to screen via calibration polynomial
+  const mapped = CalibrationMapper.isFitted()
+    ? CalibrationMapper.map(kx, ky)
+    : { x: kx, y: ky };
 
-/* ═══════════════════════════════════════════════════════════════
-   CALIBRATION FLOW
-   Phase 1: 16 points (4×4 grid) — user clicks each while looking at it
-   Phase 2: 4 verification points — we measure accuracy
-═══════════════════════════════════════════════════════════════ */
+  curGazeMappedX = mapped.x;
+  curGazeMappedY = mapped.y;
 
-// 16-point 4×4 grid (fractions of viewport)
-const CAL_GRID_4x4 = [
-  [.05,.05],[.35,.05],[.65,.05],[.95,.05],
-  [.05,.33],[.35,.33],[.65,.33],[.95,.33],
-  [.05,.66],[.35,.66],[.65,.66],[.95,.66],
-  [.05,.95],[.35,.95],[.65,.95],[.95,.95],
+  // ⑥ Move cursor (only when calibrated and eye tracking is active for current player)
+  const cursor = document.getElementById('eyeCursor');
+  if (cursor.style.display !== 'none') {
+    cursor.style.left = mapped.x + 'px';
+    cursor.style.top  = mapped.y + 'px';
+  }
+
+  // fps counter for debug
+  frameCount++;
+  const now = performance.now();
+  if (now - fpsT > 1000) { lastFps = frameCount; frameCount = 0; fpsT = now; }
+}
+
+function killWGUI() {
+  ['webgazerVideoContainer','webgazerFaceOverlay','webgazerFaceFeedbackBox','webgazerVideoFeed']
+    .forEach(id => { const e = document.getElementById(id); if(e) e.style.cssText='display:none!important'; });
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * 7. CALIBRATION FLOW
+ *
+ *    9 training points (3×3 grid, well spread) + 4 verification points.
+ *    For each point:
+ *      a) Show dot.  b) Settle timer (CAL_SETTLE_MS).
+ *      c) Collect CAL_TARGET samples that pass the fixation + spatial gate.
+ *      d) User can click to commit early if enough samples collected.
+ *      e) Auto-commit when CAL_TARGET samples reached.
+ * ─────────────────────────────────────────────────────────────── */
+const CAL_SETTLE_MS   = 900;   // ms to wait before collecting starts
+const CAL_TARGET      = 30;    // samples required per point
+const CAL_TRAIN_POS = [        // 9-point 3×3 (avoids extreme edges — more reliable)
+  [.10,.10],[.50,.10],[.90,.10],
+  [.10,.50],[.50,.50],[.90,.50],
+  [.10,.90],[.50,.90],[.90,.90],
+];
+const CAL_VERIFY_POS = [       // 4 check points between training points
+  [.30,.30],[.70,.30],[.30,.70],[.70,.70],
 ];
 
-// 4 verification points (not on training positions)
-const CAL_VERIFY = [
-  [.20,.20],[.80,.20],[.20,.80],[.80,.80],
-];
-
-let calPhase      = 1; // 1 = training, 2 = verification
-let calIndex      = 0;
-let calDots       = [];
-let calSampleBuf  = []; // gaze samples gathered while dot is active
-
-// Verification data
-let verifyErrors  = [];
+const calState = {
+  phase:       'idle',   // 'idle' | 'train' | 'verify' | 'done'
+  idx:         0,
+  collecting:  false,
+  settleTimer: null,
+  samples:     [],
+  currentDot:  null,     // { sx, sy, el }
+  verifyErrors:[],
+  dots:        [],
+};
 
 function openCalibration() {
   if (!eyeEnabled) {
     eyeEnabled = true;
-    GazeFilter.reset();
-    CalibrationMap.clear();
+    kalX.reset(); kalY.reset();
+    OutlierGate.reset(); FixationDetector.reset();
+    CalibrationMapper.clear();
     initWebGazer();
     document.getElementById('dwellSpeedBlock').style.display = 'block';
   } else {
-    // Re-calibrate: reset filter & map
-    GazeFilter.reset();
-    CalibrationMap.clear();
+    kalX.reset(); kalY.reset();
+    OutlierGate.reset(); FixationDetector.reset();
+    CalibrationMapper.clear();
   }
 
-  calPhase = 1;
-  calIndex = 0;
-  verifyErrors = [];
+  // Hide eye cursor during calibration — prevents user from tracking the cursor instead of the dot
+  document.getElementById('eyeCursor').style.display = 'none';
 
-  document.getElementById('calAccuracy').style.display = 'none';
-  document.getElementById('calSubText').innerHTML =
-    'Fase 1 van 2: Klik op elk groen punt terwijl je er direct naar kijkt.<br>Houd je hoofd stil. Kijk naar het punt <em>voor</em> je klikt.';
-  document.getElementById('calProgress').textContent = `Punt 1 van ${CAL_GRID_4x4.length}`;
+  calState.phase = 'train';
+  calState.idx   = 0;
+  calState.verifyErrors = [];
 
-  buildCalDots(CAL_GRID_4x4);
-  showScreen('calibration');
-  activateCalDot(0);
+  document.getElementById('calAccBadge').style.display = 'none';
+  document.getElementById('calSub').textContent =
+    'Kijk naar het groene punt. Houd je hoofd stil. Klik erop als je ernaar kijkt.';
+
+  _buildCalDots(CAL_TRAIN_POS);
+  showScreen('calScreen');
+  document.getElementById('calClickCatcher').style.display = 'block';
+  _activateDot(0);
 }
 
-function buildCalDots(positions) {
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-  calDots = [];
+function _buildCalDots(positions) {
+  // Remove old dots
+  calState.dots.forEach(d => d.el.remove());
+  calState.dots = [];
+
   positions.forEach((pos, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'cal-dot';
-    dot.style.left = (pos[0] * window.innerWidth)  + 'px';
-    dot.style.top  = (pos[1] * window.innerHeight) + 'px';
-    dot.innerHTML  = '<div class="dwell-ring"></div>';
-    dot.addEventListener('click', () => onCalDotClick(i));
-    grid.appendChild(dot);
-    calDots.push(dot);
+    const sx = pos[0] * window.innerWidth;
+    const sy = pos[1] * window.innerHeight;
+    const el = document.createElement('div');
+    el.className = 'cal-dot';
+    el.style.left = sx + 'px';
+    el.style.top  = sy + 'px';
+    el.innerHTML  = '<div class="ring"></div><div class="body"></div><canvas width="60" height="60"></canvas>';
+    document.getElementById('calScreen').appendChild(el);
+    calState.dots.push({ el, sx, sy });
   });
 }
 
-function activateCalDot(idx) {
-  calDots.forEach((d, i) => {
-    d.classList.remove('active');
-    if (i < idx) d.classList.add('done');
+function _activateDot(idx) {
+  const positions = calState.phase === 'train' ? CAL_TRAIN_POS : CAL_VERIFY_POS;
+  const total = positions.length;
+
+  calState.idx = idx;
+  calState.collecting = false;
+  calState.samples = [];
+  calState.currentDot = calState.dots[idx];
+
+  // Update dot visuals
+  calState.dots.forEach((d, i) => {
+    d.el.classList.remove('active','waiting','done');
+    if (i < idx) d.el.classList.add('done');
   });
-  if (idx < calDots.length) {
-    calDots[idx].classList.add('active');
-    // Start collecting gaze samples for this dot
-    CalibrationMap.startSample();
-    calCollecting = true;
+  calState.dots[idx].el.classList.add('waiting');
+
+  const phase = calState.phase === 'train' ? 'Punt' : 'Verificatie';
+  const total2 = calState.phase === 'train' ? `${idx+1} van ${total}` : `${idx+1} van ${total}`;
+  document.getElementById('calProgress').textContent = `${phase} ${total2}`;
+  document.getElementById('calStability').textContent = '⏳ Stabiliseer je blik…';
+  document.getElementById('calStability').classList.remove('stable');
+
+  // Settle timer: don't collect until user has had time to fixate
+  clearTimeout(calState.settleTimer);
+  calState.settleTimer = setTimeout(() => {
+    calState.collecting = true;
+    calState.dots[idx].el.classList.remove('waiting');
+    calState.dots[idx].el.classList.add('active');
+    document.getElementById('calStability').textContent = '👁️ Kijk naar het punt…';
+    document.getElementById('calStability').classList.add('stable');
+    _drawCalProgress(idx, 0);
+  }, CAL_SETTLE_MS);
+}
+
+function updateCalUI(fix) {
+  const n = calState.samples.length;
+  _drawCalProgress(calState.idx, n / CAL_TARGET);
+  if (n >= CAL_TARGET) _commitCurrentDot();
+}
+
+function _drawCalProgress(dotIdx, fraction) {
+  const dot = calState.dots[dotIdx];
+  if (!dot) return;
+  const cv = dot.el.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,60,60);
+  if (fraction <= 0) return;
+  ctx.beginPath();
+  ctx.arc(30,30,26,-Math.PI/2, -Math.PI/2 + fraction * Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
+
+function onCalClick() {
+  // User manually clicks — commit if we have enough samples
+  if (!calState.collecting) return;
+  if (calState.samples.length >= 5) _commitCurrentDot();
+  // else: too few samples, ignore click and wait for more
+}
+
+function _commitCurrentDot() {
+  calState.collecting = false;
+  clearTimeout(calState.settleTimer);
+
+  const dot = calState.currentDot;
+  const raw = calState.samples;
+
+  // IQR-based outlier removal
+  function iqrFilter(arr) {
+    const s = [...arr].sort((a,b)=>a-b);
+    const q1 = s[Math.floor(s.length*0.25)];
+    const q3 = s[Math.floor(s.length*0.75)];
+    const iqr = q3 - q1;
+    return s.filter(v => v >= q1 - 1.5*iqr && v <= q3 + 1.5*iqr);
   }
-}
+  const cleanX = iqrFilter(raw.map(s=>s.x));
+  const cleanY = iqrFilter(raw.map(s=>s.y));
+  const meanX  = cleanX.reduce((a,b)=>a+b,0) / cleanX.length;
+  const meanY  = cleanY.reduce((a,b)=>a+b,0) / cleanY.length;
 
-function onCalDotClick(idx) {
-  if (idx !== calIndex) return;
-  calCollecting = false;
+  dot.el.classList.remove('active','waiting');
+  dot.el.classList.add('done');
 
-  const positions = calPhase === 1 ? CAL_GRID_4x4 : CAL_VERIFY;
-  const pos = positions[idx];
-  const sx  = pos[0] * window.innerWidth;
-  const sy  = pos[1] * window.innerHeight;
+  if (calState.phase === 'train') {
+    CalibrationMapper.addPoint(meanX, meanY, dot.sx, dot.sy);
+    // Also feed WebGazer's own regression (belt and braces)
+    webgazer.recordScreenPosition(dot.sx, dot.sy, 'click');
 
-  if (calPhase === 1) {
-    // Commit training point
-    CalibrationMap.commitPoint(sx, sy);
-    // Also record with WebGazer (helps its internal regression)
-    if (typeof webgazer !== 'undefined') webgazer.recordScreenPosition(sx, sy, 'click');
-
-    calDots[idx].classList.remove('active');
-    calDots[idx].classList.add('done');
-    calIndex++;
-
-    if (calIndex >= CAL_GRID_4x4.length) {
-      startVerificationPhase();
+    calState.idx++;
+    if (calState.idx >= CAL_TRAIN_POS.length) {
+      _startVerification();
     } else {
-      document.getElementById('calProgress').textContent = `Punt ${calIndex+1} van ${CAL_GRID_4x4.length}`;
-      activateCalDot(calIndex);
+      _activateDot(calState.idx);
     }
 
   } else {
-    // Verification: measure error at this point
-    const corrected = CalibrationMap.correct(curGazeX, curGazeY);
-    // Use raw filtered gaze for error estimate
-    const err = Math.hypot(corrected.x - sx, corrected.y - sy);
-    verifyErrors.push(err);
+    // Verification: measure error
+    const mapped = CalibrationMapper.map(meanX, meanY);
+    const err = Math.hypot(mapped.x - dot.sx, mapped.y - dot.sy);
+    calState.verifyErrors.push(err);
 
-    calDots[idx].classList.remove('active');
-    calDots[idx].classList.add('done');
-    calIndex++;
-
-    if (calIndex >= CAL_VERIFY.length) {
-      finishCalibration();
+    calState.idx++;
+    if (calState.idx >= CAL_VERIFY_POS.length) {
+      _finishCalibration();
     } else {
-      document.getElementById('calProgress').textContent = `Verificatie ${calIndex+1} van ${CAL_VERIFY.length}`;
-      activateCalDot(calIndex);
+      _activateDot(calState.idx);
     }
   }
 }
 
-function startVerificationPhase() {
-  calPhase  = 2;
-  calIndex  = 0;
-  document.getElementById('calSubText').innerHTML =
-    'Fase 2 van 2: Verificatie — kijk naar het punt en klik.<br>Dit meet hoe nauwkeurig de kalibratie is.';
-  document.getElementById('calProgress').textContent = `Verificatie 1 van ${CAL_VERIFY.length}`;
-  document.getElementById('calAccuracy').style.display = 'block';
-  document.getElementById('calAccuracy').textContent = 'Meten...';
-
-  buildCalDots(CAL_VERIFY);
-  activateCalDot(0);
+function _startVerification() {
+  calState.phase = 'verify';
+  calState.idx   = 0;
+  document.getElementById('calSub').textContent =
+    'Verificatie: kijk naar elk punt en klik. Dit meet de nauwkeurigheid.';
+  document.getElementById('calAccBadge').style.display = 'inline-block';
+  document.getElementById('calAccBadge').textContent = `RMSE: ${Math.round(CalibrationMapper.rmse())}px`;
+  _buildCalDots(CAL_VERIFY_POS);
+  _activateDot(0);
 }
 
-function finishCalibration() {
-  calCollecting = false;
-  document.getElementById('calGrid').innerHTML = '';
+function _finishCalibration() {
+  calState.phase = 'done';
+  calState.collecting = false;
+  document.getElementById('calClickCatcher').style.display = 'none';
 
-  const avgErr = verifyErrors.reduce((a,b)=>a+b,0) / verifyErrors.length;
-  const rating = avgErr < 60 ? '🟢 Uitstekend' : avgErr < 120 ? '🟡 Goed' : '🔴 Matig — herkalibreer?';
+  const errs = calState.verifyErrors;
+  const avg  = errs.reduce((a,b)=>a+b,0) / errs.length;
+  const rmse = CalibrationMapper.rmse();
 
-  document.getElementById('eyeCursor').style.display = 'block';
+  // Remove calibration dots
+  calState.dots.forEach(d => d.el.remove());
+  calState.dots = [];
+
   updateAccessibility();
   showScreen('setup');
 
-  setTimeout(() => {
-    alert(`✅ Kalibratie klaar!\n\nGemiddelde afwijking: ${Math.round(avgErr)}px — ${rating}\n\nTip: Press D tijdens het spel voor debug-informatie.`);
-  }, 100);
+  const rating = avg < 70 ? '🟢 Uitstekend' : avg < 130 ? '🟡 Goed' : '🔴 Matig — probeer opnieuw';
+  setTimeout(() => alert(
+    `✅ Kalibratie klaar!\n\n` +
+    `Verificatiefout: ${Math.round(avg)}px  ${rating}\n` +
+    `Training RMSE:   ${Math.round(rmse)}px\n\n` +
+    `Tip: druk D voor debug-info. Herkalibreer als de fout > 130px is.`
+  ), 80);
 }
 
 function cancelCalibration() {
-  calCollecting = false;
-  document.getElementById('calGrid').innerHTML = '';
+  calState.collecting = false;
+  clearTimeout(calState.settleTimer);
+  calState.dots.forEach(d => d.el.remove());
+  calState.dots = [];
+  document.getElementById('calClickCatcher').style.display = 'none';
   showScreen('setup');
 }
 
+/* ────────────────────────────────────────────────────────────────
+ * 8. DEBUG PANEL  (press D to toggle)
+ * ─────────────────────────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'd' || e.key === 'D') {
+    debugOn = !debugOn;
+    document.getElementById('dbg').style.display = debugOn ? 'block' : 'none';
+  }
+});
 
-/* ═══════════════════════════════════════════════════════════════
-   DWELL CONFIG
-═══════════════════════════════════════════════════════════════ */
-let dwellDuration = 1500;
+function updateDebugPanel() {
+  const fix = FixationDetector.push(curGazeRawX, curGazeRawY);
+  const rej = (OutlierGate.rejectRate()*100).toFixed(1);
+  const mapped = CalibrationMapper.isFitted()
+    ? CalibrationMapper.map(curGazeRawX, curGazeRawY)
+    : { x: 0, y: 0 };
+  const rmse = Math.round(CalibrationMapper.rmse());
+  const warn = c => c > 50 ? 'dbg-err' : c > 25 ? 'dbg-warn' : '';
 
-function isDwellActive() {
-  if (!eyeEnabled) return false;
-  const p = players[currentPlayer];
-  return p ? p.eyeTracking : false;
+  document.getElementById('dbg').innerHTML =
+    `<b>EYE TRACKING DEBUG</b><br>` +
+    `RAW kalman  ${Math.round(curGazeRawX)}, ${Math.round(curGazeRawY)}<br>` +
+    `MAPPED      ${Math.round(curGazeMappedX)}, ${Math.round(curGazeMappedY)}<br>` +
+    `Fixating    ${fix.fixating ? '<span style="color:#2ecc71">YES</span>' : 'no'} (disp ${Math.round(fix.dispersion)}px)<br>` +
+    `<span class="${warn(parseFloat(rej))}">Reject rate ${rej}%</span><br>` +
+    `Cal points  ${CalibrationMapper.count()}<br>` +
+    `Train RMSE  ${rmse}px<br>` +
+    `FPS         ${lastFps}<br>` +
+    `Cal samples ${calState.collecting ? calState.samples.length : '—'}`;
 }
 
-function setSpeed(btn) {
+/* ────────────────────────────────────────────────────────────────
+ * 9. HELPERS
+ * ─────────────────────────────────────────────────────────────── */
+function eyeTrackingActive() {
+  if (!eyeEnabled || !CalibrationMapper.isFitted()) return false;
+  const p = players[currentPlayer];
+  return p?.eyeTracking ?? false;
+}
+
+function updateAccessibility() {
+  const show = eyeTrackingActive();
+  document.getElementById('eyeCursor').style.display = show ? 'block' : 'none';
+}
+
+function setDwellSpeed(btn) {
   document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   dwellDuration = parseInt(btn.dataset.ms);
 }
 
-// Mouse-hover dwell fallback (for eye-tracking players during test / mouse use)
-function applyDwell(el, callback) {
+// Mouse-hover dwell fallback (used by eye-tracking players if mouse is also present)
+function applyDwell(el, cb) {
   let timer = null;
   el.addEventListener('mouseenter', () => {
-    if (!isDwellActive()) return;
-    const ring  = el.querySelector('.dwell-ring');
-    const start = Date.now();
+    if (!eyeTrackingActive()) return;
+    const ring = el.querySelector('.dwell-ring'), t0 = Date.now();
     timer = setInterval(() => {
-      const progress = Math.min((Date.now() - start) / dwellDuration, 1);
-      if (ring) ring.style.background =
-        `conic-gradient(rgba(255,255,255,.55) ${progress*360}deg,transparent 0deg)`;
-      if (progress >= 1) {
-        clearInterval(timer);
-        if (ring) ring.style.background = '';
-        callback();
-      }
+      const p = Math.min((Date.now()-t0)/dwellDuration,1);
+      if (ring) ring.style.background = `conic-gradient(rgba(255,255,255,.55) ${p*360}deg,transparent 0deg)`;
+      if (p >= 1) { clearInterval(timer); if(ring) ring.style.background=''; cb(); }
     }, 16);
   });
   el.addEventListener('mouseleave', () => {
@@ -854,21 +917,17 @@ function applyDwell(el, callback) {
   });
 }
 
-
 /* ═══════════════════════════════════════════════════════════════
-   GAME STATE
-═══════════════════════════════════════════════════════════════ */
+ *  GAME STATE
+ * ═══════════════════════════════════════════════════════════════ */
 const rollSound    = new Audio('dice.mp3');
 const sparkleSound = new Audio('sparkle.mp3');
 let soundEnabled   = true;
 let players        = [];
 let currentPlayer  = 0;
 let tableTiles     = [];
-let dice           = [];
-let chosenDice     = [];
-let locked         = [];
+let dice=[], chosenDice=[], locked=[];
 
-/* ── SETUP UI ── */
 let numPlayers = 2;
 const defNames = ['Kristian','Anna','Boris','Carmen','David','Gina','Floris'];
 
@@ -876,13 +935,12 @@ const defNames = ['Kristian','Anna','Boris','Carmen','David','Gina','Floris'];
   const row = document.getElementById('countRow');
   for (let n = 2; n <= 7; n++) {
     const b = document.createElement('button');
-    b.className = 'count-btn' + (n === 2 ? ' active' : '');
+    b.className = 'count-btn' + (n===2?' active':'');
     b.textContent = n;
     b.onclick = () => {
       numPlayers = n;
-      document.querySelectorAll('.count-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      buildNames();
+      document.querySelectorAll('.count-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); buildNames();
     };
     row.appendChild(b);
   }
@@ -890,317 +948,192 @@ const defNames = ['Kristian','Anna','Boris','Carmen','David','Gina','Floris'];
 })();
 
 function buildNames() {
-  const el   = document.getElementById('nameInputs');
-  const prev = [...el.querySelectorAll('.name-input')].map(i => i.value);
+  const el = document.getElementById('nameInputs');
+  const prev = [...el.querySelectorAll('.name-input')].map(i=>i.value);
   el.innerHTML = '';
-  for (let i = 0; i < numPlayers; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'player-setup';
-    wrapper.style.cssText = 'background:#fff;padding:12px;border-radius:14px;margin-bottom:10px;';
-
-    const inp       = document.createElement('input');
-    inp.className   = 'name-input';
-    inp.placeholder = defNames[i];
-    inp.value       = prev[i] || '';
-
-    const eyeRow   = document.createElement('div');
-    eyeRow.style.marginTop = '8px';
-    const eyeCheck = document.createElement('input');
-    eyeCheck.type  = 'checkbox';
-    eyeCheck.className = 'eye-check';
-    const eyeLabel = document.createElement('label');
-    eyeLabel.textContent = ' Eye tracking gebruiken';
-
-    eyeRow.appendChild(eyeCheck);
-    eyeRow.appendChild(eyeLabel);
-    wrapper.appendChild(inp);
-    wrapper.appendChild(eyeRow);
-    el.appendChild(wrapper);
+  for (let i=0;i<numPlayers;i++) {
+    const w = document.createElement('div');
+    w.className = 'player-setup';
+    w.style.cssText = 'background:#fff;padding:12px;border-radius:14px;margin-bottom:10px;';
+    const inp = document.createElement('input');
+    inp.className='name-input'; inp.placeholder=defNames[i]; inp.value=prev[i]||'';
+    const er = document.createElement('div'); er.style.marginTop='8px';
+    const ec = document.createElement('input'); ec.type='checkbox'; ec.className='eye-check';
+    const el2 = document.createElement('label'); el2.textContent=' Eye tracking gebruiken';
+    er.appendChild(ec); er.appendChild(el2);
+    w.appendChild(inp); w.appendChild(er); el.appendChild(w);
   }
 }
 
 function startGame() {
-  const wrappers = [...document.querySelectorAll('.player-setup')];
-  players = wrappers.map((wrap, i) => ({
-    name:        wrap.querySelector('.name-input').value.trim() || defNames[i],
-    tiles:       [],
-    eyeTracking: wrap.querySelector('.eye-check').checked,
+  const ws = [...document.querySelectorAll('.player-setup')];
+  players = ws.map((w,i) => ({
+    name: w.querySelector('.name-input').value.trim()||defNames[i],
+    tiles: [],
+    eyeTracking: w.querySelector('.eye-check').checked,
   }));
-  currentPlayer = 0;
-  tableTiles    = Array.from({ length: 16 }, (_, i) => 21 + i);
-  resetTurn();
-  showScreen('game');
-  renderAll();
-  updateAccessibility();
+  currentPlayer=0; tableTiles=Array.from({length:16},(_,i)=>21+i);
+  resetTurn(); showScreen('game'); renderAll(); updateAccessibility();
 }
 
 function resetGame() { showScreen('setup'); }
 function resetTurn() { dice=[]; chosenDice=[]; locked=[]; }
-
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(id);
-  if (el) el.classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const e=document.getElementById(id); if(e) e.classList.add('active');
 }
+function setInstruction(msg) { document.getElementById('instruction').textContent=msg; }
+function wormValue(t)  { return t<=24?1:t<=28?2:t<=32?3:4; }
+function label(v)      { return v==='W'?'🐛':String(v); }
+function turnScore()   { return chosenDice.reduce((s,d)=>s+(d==='W'?5:d),0); }
+function pWorms(p)     { return p.tiles.reduce((s,t)=>s+wormValue(t),0); }
 
-/* ── HELPERS ── */
-function setInstruction(msg) { document.getElementById('instruction').textContent = msg; }
-function wormValue(t)  { return t <= 24 ? 1 : t <= 28 ? 2 : t <= 32 ? 3 : 4; }
-function label(v)      { return v === 'W' ? '🐛' : String(v); }
-function turnScore()   { return chosenDice.reduce((s,d) => s + (d==='W' ? 5 : d), 0); }
-function pWorms(p)     { return p.tiles.reduce((s,t) => s + wormValue(t), 0); }
-
-/* ── TILE CLICK ── */
-function clickTile(tileNum) {
-  if (!tableTiles.includes(tileNum)) return;
-  tableTiles = tableTiles.filter(t => t !== tileNum);
-  players[currentPlayer].tiles.push(tileNum);
-  if (tableTiles.length === 0) { renderGameOver(); showScreen('gameover'); return; }
+function clickTile(n) {
+  if (!tableTiles.includes(n)) return;
+  tableTiles=tableTiles.filter(t=>t!==n);
+  players[currentPlayer].tiles.push(n);
+  if (!tableTiles.length) { renderGameOver(); showScreen('gameover'); return; }
   nextTurn();
 }
 
-/* ── ROLL ── */
 function doRoll() {
-  if (soundEnabled) { rollSound.currentTime = 0; rollSound.play(); }
-  if (dice.length > 0) return;
-  const remaining = 8 - chosenDice.length;
-  if (remaining === 0) { doStop(); return; }
-  dice = Array.from({ length: remaining }, () => {
-    const v = Math.floor(Math.random() * 6) + 1;
-    return v === 6 ? 'W' : v;
-  });
-  const freshValues = [...new Set(dice)].filter(v => !locked.includes(v));
-  if (freshValues.length === 0) {
-    renderDiceArea(true);
-    updateButtons();
-    showOverlay('😬','Geen nieuwe symbolen!','Alle gegooide symbolen zijn al gekozen.', fail);
-    return;
-  }
-  renderDiceArea(true);
-  updateButtons();
-  setInstruction(`Klik op een dobbelsteen (${remaining} over)`);
+  if (soundEnabled) { rollSound.currentTime=0; rollSound.play(); }
+  if (dice.length>0) return;
+  const rem=8-chosenDice.length;
+  if (!rem) { doStop(); return; }
+  dice=Array.from({length:rem},()=>{ const v=Math.floor(Math.random()*6)+1; return v===6?'W':v; });
+  const fresh=[...new Set(dice)].filter(v=>!locked.includes(v));
+  if (!fresh.length) { renderDiceArea(true); updateButtons(); showOverlay('😬','Geen nieuwe symbolen!','Alle gegooide symbolen zijn al gekozen.',fail); return; }
+  renderDiceArea(true); updateButtons();
+  setInstruction(`Klik op een dobbelsteen (${rem} over)`);
 }
 
-/* ── LOCK ── */
-function lockValue(value) {
-  if (locked.includes(value) || !dice.includes(value)) return;
-  if (value === 'W' && soundEnabled) { sparkleSound.currentTime = 0; sparkleSound.play(); }
-  locked.push(value);
-  chosenDice.push(...dice.filter(d => d === value));
-  dice = [];
-  renderDiceArea();
-  renderChosen();
-  updateHeader();
-  if (chosenDice.length === 8) {
-    updateButtons(); setInstruction('Alle dobbelstenen gekozen!');
-    setTimeout(doStop, 600); return;
-  }
-  updateButtons();
-  setInstruction('Gooi opnieuw of stop je beurt');
+function lockValue(v) {
+  if (locked.includes(v)||!dice.includes(v)) return;
+  if (v==='W'&&soundEnabled) { sparkleSound.currentTime=0; sparkleSound.play(); }
+  locked.push(v); chosenDice.push(...dice.filter(d=>d===v)); dice=[];
+  renderDiceArea(); renderChosen(); updateHeader();
+  if (chosenDice.length===8) { updateButtons(); setInstruction('Alle dobbelstenen gekozen!'); setTimeout(doStop,600); return; }
+  updateButtons(); setInstruction('Gooi opnieuw of stop je beurt');
 }
 
-/* ── STOP ── */
 function doStop() {
-  if (!locked.includes('W')) {
-    showOverlay('🐛','Geen worm!','Je moet minstens één worm hebben.', fail);
-    return;
+  if (!locked.includes('W')) { showOverlay('🐛','Geen worm!','Je moet minstens één worm hebben.',fail); return; }
+  const sc=turnScore();
+  for (let i=0;i<players.length;i++) {
+    if (i===currentPlayer) continue;
+    const top=players[i].tiles[players[i].tiles.length-1];
+    if (top===sc) { players[currentPlayer].tiles.push(players[i].tiles.pop()); showOverlay('🎉','Gestolen!',`${players[i].name} verliest tegel ${sc}`,nextTurn); return; }
   }
-  const score = turnScore();
-
-  for (let i = 0; i < players.length; i++) {
-    if (i === currentPlayer) continue;
-    const top = players[i].tiles[players[i].tiles.length - 1];
-    if (top === score) {
-      players[currentPlayer].tiles.push(players[i].tiles.pop());
-      showOverlay('🎉','Gestolen!',`${players[i].name} verliest tegel ${score}`, nextTurn);
-      return;
-    }
-  }
-
-  if (tableTiles.includes(score)) {
-    tableTiles = tableTiles.filter(t => t !== score);
-    players[currentPlayer].tiles.push(score);
-    afterTake(`Tegel ${score} gepakt!`);
-    return;
-  }
-
-  const lower = tableTiles.filter(t => t < score);
-  if (lower.length > 0) {
-    const best = lower[lower.length - 1];
-    tableTiles = tableTiles.filter(t => t !== best);
-    players[currentPlayer].tiles.push(best);
-    afterTake(`Tegel ${best} gepakt!`);
-    return;
-  }
-
-  showOverlay('😢','Helaas!','Geen tegel beschikbaar.', fail);
+  if (tableTiles.includes(sc)) { tableTiles=tableTiles.filter(t=>t!==sc); players[currentPlayer].tiles.push(sc); afterTake(`Tegel ${sc} gepakt!`); return; }
+  const low=tableTiles.filter(t=>t<sc);
+  if (low.length) { const best=low[low.length-1]; tableTiles=tableTiles.filter(t=>t!==best); players[currentPlayer].tiles.push(best); afterTake(`Tegel ${best} gepakt!`); return; }
+  showOverlay('😢','Helaas!','Geen tegel beschikbaar.',fail);
 }
 
 function afterTake(msg) {
-  if (tableTiles.length === 0) {
-    renderGameOver();
-    showOverlay('✅','Tegel gepakt!', msg, () => showScreen('gameover'));
-  } else {
-    showOverlay('✅','Tegel gepakt!', msg, nextTurn);
-  }
+  if (!tableTiles.length) { renderGameOver(); showOverlay('✅','Tegel gepakt!',msg,()=>showScreen('gameover')); }
+  else showOverlay('✅','Tegel gepakt!',msg,nextTurn);
 }
 
-/* ── FAIL ── */
 function fail() {
-  const p = players[currentPlayer];
-  let returned = null;
-  if (p.tiles.length > 0) {
-    returned = p.tiles.pop();
-    tableTiles.push(returned);
-    tableTiles.sort((a, b) => a - b);
-  }
-  if (tableTiles.length > 0) {
-    const highest = tableTiles[tableTiles.length - 1];
-    if (highest !== returned) tableTiles.pop();
-  }
-  if (tableTiles.length === 0) { renderGameOver(); showScreen('gameover'); }
-  else { nextTurn(); }
+  const p=players[currentPlayer]; let ret=null;
+  if (p.tiles.length) { ret=p.tiles.pop(); tableTiles.push(ret); tableTiles.sort((a,b)=>a-b); }
+  if (tableTiles.length) { const hi=tableTiles[tableTiles.length-1]; if(hi!==ret) tableTiles.pop(); }
+  if (!tableTiles.length) { renderGameOver(); showScreen('gameover'); } else nextTurn();
 }
 
-/* ── NEXT TURN ── */
 function nextTurn() {
-  currentPlayer = (currentPlayer + 1) % players.length;
-  resetTurn();
-  renderAll();
-  updateAccessibility();
+  currentPlayer=(currentPlayer+1)%players.length;
+  resetTurn(); renderAll(); updateAccessibility();
 }
 
-/* ── OVERLAY ── */
-let overlayCallback = null;
-function showOverlay(icon, title, text, cb) {
-  document.getElementById('mIcon').textContent  = icon;
-  document.getElementById('mTitle').textContent = title;
-  document.getElementById('mText').textContent  = text;
-  overlayCallback = cb;
+let overlayCallback=null;
+function showOverlay(icon,title,text,cb) {
+  document.getElementById('mIcon').textContent=icon;
+  document.getElementById('mTitle').textContent=title;
+  document.getElementById('mText').textContent=text;
+  overlayCallback=cb;
   document.getElementById('overlay').classList.add('show');
   renderAll();
 }
 function closeOverlay() {
   document.getElementById('overlay').classList.remove('show');
-  if (overlayCallback) { const fn = overlayCallback; overlayCallback = null; fn(); }
+  if (overlayCallback) { const f=overlayCallback; overlayCallback=null; f(); }
 }
 
-/* ── RENDER ── */
-function renderAll() {
-  renderTiles();
-  renderDiceArea();
-  renderChosen();
-  renderPlayers();
-  updateHeader();
-  updateButtons();
-}
+function renderAll() { renderTiles(); renderDiceArea(); renderChosen(); renderPlayers(); updateHeader(); updateButtons(); }
 
 function renderTiles() {
-  const el = document.getElementById('tileRow');
-  el.innerHTML = '';
-  tableTiles.forEach(t => {
-    const d = document.createElement('div');
-    d.className = 'tile';
-    d.innerHTML = `<div class="tile-n">${t}</div><div class="tile-w">🐛${wormValue(t)}</div>`;
-    d.addEventListener('click', () => clickTile(t));
-    applyDwell(d, () => clickTile(t));
+  const el=document.getElementById('tileRow'); el.innerHTML='';
+  tableTiles.forEach(t=>{
+    const d=document.createElement('div'); d.className='tile';
+    d.innerHTML=`<div class="tile-n">${t}</div><div class="tile-w">🐛${wormValue(t)}</div>`;
+    d.addEventListener('click',()=>clickTile(t)); applyDwell(d,()=>clickTile(t));
     el.appendChild(d);
   });
 }
 
-function renderDiceArea(animate = false) {
-  const el = document.getElementById('diceRow');
-  el.innerHTML = '';
-  if (dice.length === 0) return;
-  dice.forEach((v, idx) => {
-    const locked_ = locked.includes(v);
-    const die = document.createElement('div');
-    die.className = 'die' + (locked_ ? ' used' : '');
-    if (animate) { die.classList.add('rolling'); die.style.animationDelay = (idx * .05) + 's'; }
-    die.innerHTML = `${label(v)}<div class="dwell-ring"></div>`;
-    if (!locked_) {
-      die.addEventListener('click', () => lockValue(v));
-      applyDwell(die, () => lockValue(v));
-    }
-    el.appendChild(die);
+function renderDiceArea(animate=false) {
+  const el=document.getElementById('diceRow'); el.innerHTML='';
+  if (!dice.length) return;
+  dice.forEach((v,i)=>{
+    const lk=locked.includes(v);
+    const d=document.createElement('div'); d.className='die'+(lk?' used':'');
+    if (animate) { d.classList.add('rolling'); d.style.animationDelay=(i*.05)+'s'; }
+    d.innerHTML=`${label(v)}<div class="dwell-ring"></div>`;
+    if (!lk) { d.addEventListener('click',()=>lockValue(v)); applyDwell(d,()=>lockValue(v)); }
+    el.appendChild(d);
   });
 }
 
 function renderChosen() {
-  const el = document.getElementById('chosenArea');
-  el.innerHTML = '';
-  chosenDice.forEach(v => {
-    const d = document.createElement('div');
-    d.className = 'c-die';
-    d.textContent = label(v);
-    el.appendChild(d);
-  });
+  const el=document.getElementById('chosenArea'); el.innerHTML='';
+  chosenDice.forEach(v=>{ const d=document.createElement('div'); d.className='c-die'; d.textContent=label(v); el.appendChild(d); });
 }
 
 function renderPlayers() {
-  const el = document.getElementById('playersGrid');
-  el.innerHTML = '';
-  players.forEach((p, i) => {
-    const top  = p.tiles.length > 0 ? p.tiles[p.tiles.length - 1] : null;
-    const card = document.createElement('div');
-    card.className = 'p-card' + (i === currentPlayer ? ' cur' : '');
-    card.innerHTML = `
-      <div class="p-name">${p.name}${p.eyeTracking ? ' 👁️' : ''}</div>
+  const el=document.getElementById('playersGrid'); el.innerHTML='';
+  players.forEach((p,i)=>{
+    const top=p.tiles.length?p.tiles[p.tiles.length-1]:null;
+    const c=document.createElement('div'); c.className='p-card'+(i===currentPlayer?' cur':'');
+    c.innerHTML=`<div class="p-name">${p.name}${p.eyeTracking?' 👁️':''}</div>
       <div class="p-worms">🐛 ${pWorms(p)}</div>
-      ${top
-        ? `<div class="p-tile"><div>${top}</div><div>🐛${wormValue(top)}</div></div>`
-        : `<div class="p-empty">Geen tegels</div>`}
-      ${p.tiles.length > 1 ? `<div class="p-stack">+ ${p.tiles.length-1} bedekt</div>` : ''}
-    `;
-    el.appendChild(card);
+      ${top?`<div class="p-tile"><div>${top}</div><div>🐛${wormValue(top)}</div></div>`:`<div class="p-empty">Geen tegels</div>`}
+      ${p.tiles.length>1?`<div class="p-stack">+ ${p.tiles.length-1} bedekt</div>`:''}`;
+    el.appendChild(c);
   });
 }
 
 function updateHeader() {
-  const p = players[currentPlayer];
-  if (!p) return;
-  document.getElementById('hName').textContent  = p.name;
-  document.getElementById('hScore').textContent = turnScore();
-  document.getElementById('hWorms').textContent = '🐛 ' + pWorms(p);
+  const p=players[currentPlayer]; if(!p) return;
+  document.getElementById('hName').textContent=p.name;
+  document.getElementById('hScore').textContent=turnScore();
+  document.getElementById('hWorms').textContent='🐛 '+pWorms(p);
 }
 
 function updateButtons() {
-  const empty  = dice.length === 0;
-  const hasAny = locked.length > 0;
-  document.getElementById('btnRoll').disabled = !empty;
-  document.getElementById('btnStop').disabled = !(empty && hasAny);
+  const empty=!dice.length, has=locked.length>0;
+  document.getElementById('btnRoll').disabled=!empty;
+  document.getElementById('btnStop').disabled=!(empty&&has);
 }
 
-/* ── GAME OVER ── */
 function renderGameOver() {
-  const ranked = [...players]
-    .map(p => ({ name: p.name, worms: pWorms(p), topTile: p.tiles.length ? p.tiles[p.tiles.length-1] : 0 }))
-    .sort((a, b) => b.worms - a.worms || b.topTile - a.topTile);
-  const list = document.getElementById('rankingList');
-  list.innerHTML = '';
-  ranked.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'rank-row' + (i === 0 ? ' first' : '');
-    row.innerHTML = `
-      <div class="rank-pos">${['🥇','🥈','🥉'][i] || (i+1)+'.'}</div>
-      <div class="rank-name">${p.name}</div>
-      <div class="rank-worms">🐛 ${p.worms}</div>
-    `;
-    list.appendChild(row);
+  const ranked=[...players]
+    .map(p=>({name:p.name,worms:pWorms(p),top:p.tiles.length?p.tiles[p.tiles.length-1]:0}))
+    .sort((a,b)=>b.worms-a.worms||b.top-a.top);
+  const list=document.getElementById('rankingList'); list.innerHTML='';
+  ranked.forEach((p,i)=>{
+    const r=document.createElement('div'); r.className='rank-row'+(i===0?' first':'');
+    r.innerHTML=`<div class="rank-pos">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</div><div class="rank-name">${p.name}</div><div class="rank-worms">🐛 ${p.worms}</div>`;
+    list.appendChild(r);
   });
 }
 
-/* ── MISC ── */
 function toggleSound() {
-  soundEnabled = !soundEnabled;
-  const btn = document.getElementById('soundBtn');
-  btn.innerHTML = (soundEnabled ? '🔊 Geluid aan' : '🔇 Geluid uit') + '<div class="dwell-ring"></div>';
-}
-
-function updateAccessibility() {
-  const p     = players[currentPlayer];
-  const isEye = eyeEnabled && p?.eyeTracking;
-  document.getElementById('eyeCursor').style.display = isEye ? 'block' : 'none';
+  soundEnabled=!soundEnabled;
+  const b=document.getElementById('soundBtn');
+  b.innerHTML=(soundEnabled?'🔊 Geluid aan':'🔇 Geluid uit')+'<div class="dwell-ring"></div>';
 }
 </script>
 </body>
